@@ -1,11 +1,9 @@
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <header>
-    <h1>Hello</h1>
+    <h1 class="text-3xl font-bold underline">Hello</h1>
   </header>
 
-  <main>
-  </main>
+  <main></main>
 </template>
