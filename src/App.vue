@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import MathLiveInput from './components/MathLiveInput.vue'
 
 const latex = ref('\\lambda=a+b')
 </script>
