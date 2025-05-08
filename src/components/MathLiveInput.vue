@@ -10,6 +10,7 @@ const props = defineProps<{
   modelValue: string
   options?: Partial<ConstructorParameters<typeof MathfieldElement>[0]>
   class?: string | string[] | Record<string, boolean>
+  dark?: boolean;
 }>()
 
 const emit = defineEmits<{
@@ -27,6 +28,8 @@ onMounted(() => {
     const classList = normalizeClass(props.class)
     mathfield.classList.add(...classList)
   }
+
+  updateTheme(props.dark);
 
   mathfield.addEventListener('input', () => {
     emit('update:modelValue', mathfield.value)
@@ -53,6 +56,11 @@ watch(
   },
 )
 
+watch(() => props.dark, (isDark) => {
+  updateTheme(isDark);
+});
+
+
 onBeforeUnmount(() => {
   if (container.value?.contains(mathfield)) {
     container.value.removeChild(mathfield)
@@ -77,6 +85,17 @@ function updateClassList(newClass?: typeof props.class, oldClass?: typeof props.
   if (mathfield) {
     mathfield.classList.remove(...oldClasses)
     mathfield.classList.add(...newClasses)
+  }
+}
+
+function updateTheme(isDark?: boolean) {
+  const body = document.body;
+  if (!body) return;
+
+  if (isDark === true) {
+    body.setAttribute('theme', 'dark');
+  } else {
+    body.setAttribute('theme', 'light');
   }
 }
 </script>
