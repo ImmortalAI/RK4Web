@@ -8,6 +8,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    Button: typeof import('primevue/button')['default']
     MathLiveInput: typeof import('./src/components/MathLiveInput.vue')['default']
   }
 }
