@@ -99,3 +99,11 @@ function updateTheme(isDark?: boolean) {
   }
 }
 </script>
+
+<style>
+body[theme='dark'] {
+  --contains-highlight-background-color: #444444;
+  --highlight-background-color: #333333;
+  --selection-background-color: #555555;
+}
+</style>
