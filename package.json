@@ -1,5 +1,5 @@
 {
-  "name": "rk4web",
+  "name": "rkdp_web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
