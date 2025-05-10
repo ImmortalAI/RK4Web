@@ -3,14 +3,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { onMounted, onBeforeUnmount, ref, watch, type PropType } from 'vue'
 import { MathfieldElement } from 'mathlive'
 
 const props = defineProps<{
   modelValue: string
   options?: Partial<ConstructorParameters<typeof MathfieldElement>[0]>
   class?: string | string[] | Record<string, boolean>
-  dark?: boolean;
+  dark?: boolean
+  format?: 'latex' | 'ascii'
 }>()
 
 const emit = defineEmits<{
@@ -22,17 +23,26 @@ let mathfield: MathfieldElement
 
 onMounted(() => {
   mathfield = new MathfieldElement(props.options ?? {})
-  mathfield.value = props.modelValue
+
+  if (props.format === 'ascii') {
+    mathfield.setValue(props.modelValue, { format: 'ascii-math' })
+  } else {
+    mathfield.value = props.modelValue
+  }
+
+  updateTheme(props.dark)
 
   if (props.class) {
     const classList = normalizeClass(props.class)
     mathfield.classList.add(...classList)
   }
 
-  updateTheme(props.dark);
-
   mathfield.addEventListener('input', () => {
-    emit('update:modelValue', mathfield.value)
+    if (props.format === 'ascii') {
+      emit('update:modelValue', mathfield.getValue('ascii-math'))
+    } else {
+      emit('update:modelValue', mathfield.value)
+    }
   })
 
   container.value?.appendChild(mathfield)
@@ -41,8 +51,14 @@ onMounted(() => {
 watch(
   () => props.modelValue,
   (val) => {
-    if (mathfield && mathfield.value !== val) {
-      mathfield.value = val
+    if (mathfield == null) return
+    const old = props.format === 'ascii' ? mathfield.getValue('ascii-math') : mathfield.value;
+    if (old !== val) {
+      if (props.format === 'ascii') {
+        mathfield.setValue(val, { format: 'ascii-math' })
+      } else {
+        mathfield.value = val
+      }
     }
   },
 )
@@ -56,10 +72,12 @@ watch(
   },
 )
 
-watch(() => props.dark, (isDark) => {
-  updateTheme(isDark);
-});
-
+watch(
+  () => props.dark,
+  (isDark) => {
+    updateTheme(isDark)
+  },
+)
 
 onBeforeUnmount(() => {
   if (container.value?.contains(mathfield)) {
@@ -89,13 +107,13 @@ function updateClassList(newClass?: typeof props.class, oldClass?: typeof props.
 }
 
 function updateTheme(isDark?: boolean) {
-  const body = document.body;
-  if (!body) return;
+  const body = document.body
+  if (!body) return
 
   if (isDark === true) {
-    body.setAttribute('theme', 'dark');
+    body.setAttribute('theme', 'dark')
   } else {
-    body.setAttribute('theme', 'light');
+    body.setAttribute('theme', 'light')
   }
 }
 </script>
