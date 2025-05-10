@@ -6,7 +6,7 @@ type EquationInput = string; // ASCII math expression
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Subscriber = (...args: any[]) => void;
 
-interface Range {
+export interface Range {
   start: number;
   end: number;
   initialStep: number;

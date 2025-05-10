@@ -9,6 +9,10 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Button: typeof import('primevue/button')['default']
+    Card: typeof import('primevue/card')['default']
+    Chart: typeof import('primevue/chart')['default']
+    Divider: typeof import('primevue/divider')['default']
+    InputNumber: typeof import('primevue/inputnumber')['default']
     MathLiveInput: typeof import('./src/components/MathLiveInput.vue')['default']
   }
 }
