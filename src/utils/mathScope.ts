@@ -1,5 +1,5 @@
-import { parse } from 'mathjs'
-import { convertLatexToAsciiMath } from 'mathlive'
+import { parse } from 'mathjs';
+import { convertLatexToAsciiMath } from 'mathlive';
 
 /**
  * Extracts variables from a math expression and builds a scope object.
@@ -7,21 +7,21 @@ import { convertLatexToAsciiMath } from 'mathlive'
  * @returns Object with variables as keys and default value of 0
  */
 export function createScope(expr: string): Record<string, number> {
-  const node = parse(expr)
-  const vars = new Set<string>()
+  const node = parse(expr);
+  const vars = new Set<string>();
 
   node.traverse((n) => {
     if (n.type === 'SymbolNode') {
-      vars.add(n.toString())
+      vars.add(n.toString());
     }
-  })
+  });
 
-  const scope: Record<string, number> = {}
+  const scope: Record<string, number> = {};
   for (const v of vars) {
-    scope[v] = 0
+    scope[v] = 0;
   }
 
-  return scope
+  return scope;
 }
 
 /**
@@ -30,6 +30,6 @@ export function createScope(expr: string): Record<string, number> {
  * @returns Object with variables as keys and default value of 0
  */
 export function createScopeTeX(expr: string): Record<string, number> {
-  const asciiExpr = convertLatexToAsciiMath(expr)
-  return createScope(asciiExpr)
+  const asciiExpr = convertLatexToAsciiMath(expr);
+  return createScope(asciiExpr);
 }
