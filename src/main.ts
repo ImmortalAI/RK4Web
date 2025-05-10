@@ -1,10 +1,10 @@
 import './assets/main.css';
-import 'primeicons/primeicons.css'
+import 'primeicons/primeicons.css';
 
 import { createApp } from 'vue';
 import App from './App.vue';
 import PrimeVue from 'primevue/config';
-import Material from '@primeuix/themes/material';
+import Aura from '@primeuix/themes/aura';
 
 import { MathfieldElement } from 'mathlive';
 MathfieldElement.fontsDirectory = '';
@@ -14,7 +14,7 @@ const app = createApp(App);
 
 app.use(PrimeVue, {
   theme: {
-    preset: Material,
+    preset: Aura,
     options: {
       darkModeSelector: '.dark',
     },
