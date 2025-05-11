@@ -3,7 +3,8 @@ import { onMounted, reactive, ref, watch } from 'vue';
 
 import { useTheme } from '@/composables/useTheme';
 import { DormandPrinceSolver } from '@/utils/rkdp';
-import type { Range } from '@/utils/rkdp';
+import type { Range, SolutionPoint } from '@/utils/rkdp';
+import type { ChartDataProp, ChartOptionsProp } from '@/types/chart';
 
 const theme = useTheme();
 
@@ -65,8 +66,97 @@ const tempSub = rkdpProvider.subscribe('initialConditionsChanged', (n: Record<st
 watch(range, (newVal) => {
   rkdpProvider.setRange(newVal.start, newVal.end, newVal.initialStep);
 }, { deep: true })
+
 // TODO delete in future
 const tempSub2 = rkdpProvider.subscribe('rangeChanged', (n: Range) => console.log(`New range: ${n.start} ${n.end} ${n.initialStep}`));
+
+const solveTaskResult = ref<SolutionPoint[]>([])
+
+const startSolve = async (mEvent: MouseEvent) => {
+  await rkdpProvider.calculate();
+}
+
+const calculateButtonDisabled = ref(false)
+const unsubCalculateStart = rkdpProvider.subscribe('calculationStarted', () => {
+  calculateButtonDisabled.value = true;
+})
+
+const unsubCalculateProgress = rkdpProvider.subscribe('calculationProgress', (o) => console.log(o))
+
+const unsubscribeCalculateComplete = rkdpProvider.subscribe('calculationCompleted', (result: SolutionPoint[]) => {
+  solveTaskResult.value = result;
+  calculateButtonDisabled.value = false;
+})
+
+watch(solveTaskResult, (newValue) => {
+  chartData.value.datasets = []
+  Object.keys(newValue[0]).forEach((key) => {
+    if (key == 'x') return;
+    chartData.value.datasets.push(
+      {
+      label: 'Series ' + key,
+      data: newValue.map((point) => {
+        return {x: point.x, y: point[key]}
+      }),
+      fill: false,
+      tension: 0.1,
+    }
+  )
+  })
+})
+
+const chartData = ref<ChartDataProp>({
+  datasets: [
+    {
+      label: 'My XY Series',
+      data: [
+        { x: 0, y: 3 },
+        { x: 1, y: 5 },
+        { x: 2, y: 2 },
+        { x: 3, y: 8 },
+        { x: 4, y: 6 },
+      ],
+      backgroundColor: 'rgba(75, 192, 192, 0.4)',
+      borderColor: 'rgba(75, 192, 192, 1)',
+      fill: false,
+      tension: 0.1,
+    },
+  ],
+})
+
+const chartOptions = ref<ChartOptionsProp>({
+  responsive: true,
+  maintainAspectRatio: false,
+
+  scales: {
+    x: {
+      type: 'linear',
+      position: 'bottom',
+      title: {
+        display: true,
+        text: 'X value',
+      },
+    },
+    y: {
+      beginAtZero: true,
+      title: {
+        display: true,
+        text: 'Y value',
+      },
+    },
+  },
+
+  plugins: {
+    legend: {
+      display: true,
+      position: 'top',
+    },
+    title: {
+      display: true,
+      text: 'Line Graph of (x, y) Points',
+    },
+  },
+})
 </script>
 
 <template>
@@ -90,7 +180,8 @@ const tempSub2 = rkdpProvider.subscribe('rangeChanged', (n: Range) => console.lo
           <div class="flex flex-col">
             <div v-for="(value, key) in initialConditions" :key="key" class="flex gap-2 items-center mb-1">
               <label :for="'for-' + key" class="whitespace-nowrap">{{ key }}(x) =</label>
-              <InputNumber v-model="initialConditions[key]" :input-id="'for-' + key" :maxFractionDigits="6" class="w-full"></InputNumber>
+              <InputNumber v-model="initialConditions[key]" :input-id="'for-' + key" :maxFractionDigits="6"
+                class="w-full"></InputNumber>
             </div>
           </div>
         </template>
@@ -117,10 +208,11 @@ const tempSub2 = rkdpProvider.subscribe('rangeChanged', (n: Range) => console.lo
         </template>
       </Card>
       <div class="p-2"></div>
-      <Button label="Рассчитать" />
+      <Button label="Рассчитать" @click="startSolve"
+        :disabled="calculateButtonDisabled" />
     </div>
-    <div class="md:basis-2/3">
-      <Chart></Chart>
+    <div class="md:basis-2/3 border border-surface-400">
+      <Chart type="line" :data="chartData" :options="chartOptions" class="h-[80vh]"></Chart>
     </div>
   </main>
 </template>

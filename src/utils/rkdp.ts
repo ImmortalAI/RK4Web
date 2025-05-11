@@ -21,7 +21,7 @@ export interface Range {
   initialStep: number;
 }
 
-interface SolutionPoint {
+export interface SolutionPoint {
   x: number;
   [varName: string]: number;
 }
@@ -86,6 +86,7 @@ export class DormandPrinceSolver {
   }
 
   async calculate(): Promise<SolutionPoint[]> {
+    console.log("hello")
     this.checkReady();
     this._cancelRequested = false;
 
