@@ -54,6 +54,19 @@ const unsubscribeUpdateEq = rkdpProvider.subscribe("equationsUpdated", () => {
     initialConditions[varName] = 0;
   })
 })
+
+watch(initialConditions, (newConditions) => {
+  rkdpProvider.setInitialConditions(newConditions);
+})
+
+// TODO delete in future
+const tempSub = rkdpProvider.subscribe('initialConditionsChanged', (n: Record<string, number>) => console.log("IC changed: " + Object.keys(n).map(value => n[value])));
+
+watch(range, (newVal) => {
+  rkdpProvider.setRange(newVal.start, newVal.end, newVal.initialStep);
+}, {deep: true})
+// TODO delete in future
+const tempSub2 = rkdpProvider.subscribe('rangeChanged', (n: Range) => console.log(`New range: ${n.start} ${n.end} ${n.initialStep}`));
 </script>
 
 <template>
@@ -62,7 +75,7 @@ const unsubscribeUpdateEq = rkdpProvider.subscribe("equationsUpdated", () => {
       <Card>
         <template #title> Дифференциальные уравнения </template>
         <template #content>
-          <div class="flex items-center justify-between border border-primary rounded-xl p-2 m-2"
+          <div class="flex items-center gap-2 border border-primary rounded-xl p-2 m-2"
             v-for="(input, index) in mathinputFieldsData" :key="index">
             <MathLiveInput class="w-full" v-model="input.value" :dark="theme.isDark.value" format="ascii" />
             <Button icon="pi pi-minus" severity="danger" @click="removeInput(index)" />
@@ -77,7 +90,7 @@ const unsubscribeUpdateEq = rkdpProvider.subscribe("equationsUpdated", () => {
           <div class="flex flex-col">
             <div v-for="(value, key) in initialConditions" :key="key" class="flex justify-between items-center mb-1">
               <label :for="'for-' + key">{{ key }}(x) =</label>
-              <InputNumber v-model="initialConditions[key]" :id="'for-' + key"></InputNumber>
+              <InputNumber v-model="initialConditions[key]" :id="'for-' + key" :maxFractionDigits="6"></InputNumber>
             </div>
           </div>
         </template>
@@ -89,15 +102,15 @@ const unsubscribeUpdateEq = rkdpProvider.subscribe("equationsUpdated", () => {
           <div class="flex flex-col gap-2 mb-2">
             <div class="flex justify-between items-center mb-1">
               <label for="fromX">Рассчитать от</label>
-              <InputNumber v-model="range.start" id="fromX"></InputNumber>
+              <InputNumber v-model="range.start" id="fromX" :maxFractionDigits="3"></InputNumber>
             </div>
             <div class="flex justify-between items-center mb-1">
               <label for="toX">Рассчитать до</label>
-              <InputNumber v-model="range.end" id="toX"></InputNumber>
+              <InputNumber v-model="range.end" id="toX" :maxFractionDigits="3"></InputNumber>
             </div>
             <div class="flex justify-between items-center">
               <label for="step">Шаг</label>
-              <InputNumber v-model="range.initialStep" id="step"></InputNumber>
+              <InputNumber v-model="range.initialStep" id="step" :minFractionDigits="1" :maxFractionDigits="3"></InputNumber>
             </div>
           </div>
         </template>

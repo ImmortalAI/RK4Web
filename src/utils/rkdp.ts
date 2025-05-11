@@ -5,6 +5,15 @@ type EquationInput = string; // ASCII math expression
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Subscriber = (...args: any[]) => void;
+type EventType =
+  | 'equationsUpdated'
+  | 'initialConditionsChanged'
+  | 'rangeChanged'
+  | 'toleranceChanged'
+  | 'calculationStarted'
+  | 'calculationProgress'
+  | 'calculationCanceled'
+  | 'calculationCompleted';
 
 export interface Range {
   start: number;
@@ -65,7 +74,7 @@ export class DormandPrinceSolver {
     this.emit('toleranceChanged', tol);
   }
 
-  subscribe(event: string, cb: Subscriber): () => void {
+  subscribe(event: EventType, cb: Subscriber): () => void {
     if (!this.subscribers.has(event)) this.subscribers.set(event, new Set());
     this.subscribers.get(event)!.add(cb);
     return () => this.subscribers.get(event)!.delete(cb);
@@ -192,11 +201,12 @@ export class DormandPrinceSolver {
 
   private checkReady() {
     if (!this.rawEquations.length) throw new Error('No equations set');
-    if (!this.range) throw new Error('Range not configured');
+    if (this.range.start >= this.range.end || this.range.start + this.range.initialStep >= this.range.end) 
+      throw new Error('Range incorrect');
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private emit(event: string, ...args: any[]) {
+  private emit(event: EventType, ...args: any[]) {
     const subs = this.subscribers.get(event);
     if (subs) {
       for (const cb of subs) cb(...args);
