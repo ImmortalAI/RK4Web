@@ -86,7 +86,6 @@ export class DormandPrinceSolver {
   }
 
   async calculate(): Promise<SolutionPoint[]> {
-    console.log('hello');
     this.checkReady();
     this._cancelRequested = false;
 
@@ -98,7 +97,9 @@ export class DormandPrinceSolver {
       return this.initConds[v];
     });
 
-    const results: SolutionPoint[] = [];
+    const initialPoint: SolutionPoint = { x };
+    this.variables.forEach((v, i) => (initialPoint[v] = y[i]));
+    const results: SolutionPoint[] = [initialPoint];
     this.emit('calculationStarted', { range: this.range, tolerance: this.tolerance });
 
     let h = initialStep;
