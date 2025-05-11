@@ -64,7 +64,7 @@ const tempSub = rkdpProvider.subscribe('initialConditionsChanged', (n: Record<st
 
 watch(range, (newVal) => {
   rkdpProvider.setRange(newVal.start, newVal.end, newVal.initialStep);
-}, {deep: true})
+}, { deep: true })
 // TODO delete in future
 const tempSub2 = rkdpProvider.subscribe('rangeChanged', (n: Range) => console.log(`New range: ${n.start} ${n.end} ${n.initialStep}`));
 </script>
@@ -88,9 +88,9 @@ const tempSub2 = rkdpProvider.subscribe('rangeChanged', (n: Range) => console.lo
         <template #title>Начальные условия</template>
         <template #content>
           <div class="flex flex-col">
-            <div v-for="(value, key) in initialConditions" :key="key" class="flex justify-between items-center mb-1">
-              <label :for="'for-' + key">{{ key }}(x) =</label>
-              <InputNumber v-model="initialConditions[key]" :id="'for-' + key" :maxFractionDigits="6"></InputNumber>
+            <div v-for="(value, key) in initialConditions" :key="key" class="flex gap-2 items-center mb-1">
+              <label :for="'for-' + key" class="whitespace-nowrap">{{ key }}(x) =</label>
+              <InputNumber v-model="initialConditions[key]" :input-id="'for-' + key" :maxFractionDigits="6" class="w-full"></InputNumber>
             </div>
           </div>
         </template>
@@ -99,19 +99,20 @@ const tempSub2 = rkdpProvider.subscribe('rangeChanged', (n: Range) => console.lo
       <Card>
         <template #title>Диапазон расчета</template>
         <template #content>
-          <div class="flex flex-col gap-2 mb-2">
-            <div class="flex justify-between items-center mb-1">
+          <div class="flex flex-col gap-8 mt-8">
+            <FloatLabel class="relative">
+              <InputNumber v-model="range.start" input-id="fromX" :maxFractionDigits="3" class="w-full"></InputNumber>
               <label for="fromX">Рассчитать от</label>
-              <InputNumber v-model="range.start" id="fromX" :maxFractionDigits="3"></InputNumber>
-            </div>
-            <div class="flex justify-between items-center mb-1">
+            </FloatLabel>
+            <FloatLabel class="relative">
+              <InputNumber v-model="range.end" input-id="toX" :maxFractionDigits="3" class="w-full"></InputNumber>
               <label for="toX">Рассчитать до</label>
-              <InputNumber v-model="range.end" id="toX" :maxFractionDigits="3"></InputNumber>
-            </div>
-            <div class="flex justify-between items-center">
+            </FloatLabel>
+            <FloatLabel class="relative">
+              <InputNumber v-model="range.initialStep" input-id="step" :minFractionDigits="1" :maxFractionDigits="3"
+                class="w-full"></InputNumber>
               <label for="step">Шаг</label>
-              <InputNumber v-model="range.initialStep" id="step" :minFractionDigits="1" :maxFractionDigits="3"></InputNumber>
-            </div>
+            </FloatLabel>
           </div>
         </template>
       </Card>
