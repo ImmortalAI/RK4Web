@@ -1,51 +1,61 @@
+import { boolean } from 'mathjs';
+
 export interface XYPoint {
-  x: number
-  y: number
+  x: number;
+  y: number;
 }
 
 export interface ChartDataProp {
+  labels?: string[];
   datasets: Array<{
-    label: string
-    data: XYPoint[]
+    label: string;
+    data: XYPoint[];
     /** optional styling */
-    backgroundColor?: string
-    borderColor?: string
-    fill?: boolean
-    tension?: number
-  }>
+    backgroundColor?: string;
+    borderColor?: string;
+    fill?: boolean;
+    tension?: number;
+    yAxisID?: string;
+  }>;
 }
 
 export interface ChartOptionsProp {
-  responsive?: boolean
-  maintainAspectRatio?: boolean
+  responsive?: boolean;
+  maintainAspectRatio?: boolean;
+  stacked?: boolean;
+  aspectRatio?: number;
 
   scales?: {
-    x?: {
-      type?: "linear" | "time" | "category"
-      position?: "bottom" | "top"
+    [scaleName: string]: {
+      type?: 'linear' | 'time' | 'category';
+      display?: boolean;
+      position?: 'bottom' | 'top' | 'left' | 'right';
       title?: {
-        display?: boolean
-        text?: string
-      }
-    }
-    y?: {
-      beginAtZero?: boolean
-      title?: {
-        display?: boolean
-        text?: string
-      }
-    }
-  }
+        display?: boolean;
+        text?: string;
+      };
+      ticks?: {
+        color?: string;
+      };
+      grid?: {
+        color?: string;
+      };
+      beginAtZero?: boolean;
+    };
+  };
 
   plugins?: {
     legend?: {
-      display?: boolean
-      position?: "top" | "bottom" | "left" | "right"
-    }
+      display?: boolean;
+      position?: 'top' | 'bottom' | 'left' | 'right';
+      labels?: {
+        color?: string;
+      };
+    };
     title?: {
-      display?: boolean
-      text?: string
-    }
-    tooltip?: Record<string, unknown>
-  }
+      display?: boolean;
+      text?: string;
+    };
+    tooltip?: Record<string, unknown>;
+  };
 }
