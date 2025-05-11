@@ -86,7 +86,7 @@ export class DormandPrinceSolver {
   }
 
   async calculate(): Promise<SolutionPoint[]> {
-    console.log("hello")
+    console.log('hello');
     this.checkReady();
     this._cancelRequested = false;
 
@@ -202,7 +202,10 @@ export class DormandPrinceSolver {
 
   private checkReady() {
     if (!this.rawEquations.length) throw new Error('No equations set');
-    if (this.range.start >= this.range.end || this.range.start + this.range.initialStep >= this.range.end) 
+    if (
+      this.range.start >= this.range.end ||
+      this.range.start + this.range.initialStep >= this.range.end
+    )
       throw new Error('Range incorrect');
   }
 
