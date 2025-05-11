@@ -57,14 +57,14 @@ const unsubscribeUpdateEq = rkdpProvider.subscribe("equationsUpdated", () => {
 </script>
 
 <template>
-  <main class="flex justify-center items-center gap-4 h-screen w-full">
-    <div class="flex flex-col grow max-w-fit m-8 mr-0 p-2">
+  <main class="flex justify-center items-center flex-col md:flex-row gap-4 p-4">
+    <div class="md:basis-1/3 flex flex-col">
       <Card>
         <template #title> Дифференциальные уравнения </template>
         <template #content>
           <div class="flex items-center justify-between border border-primary rounded-xl p-2 m-2"
             v-for="(input, index) in mathinputFieldsData" :key="index">
-            <MathLiveInput class="min-w-xs" v-model="input.value" :dark="theme.isDark.value" format="ascii" />
+            <MathLiveInput class="w-full" v-model="input.value" :dark="theme.isDark.value" format="ascii" />
             <Button icon="pi pi-minus" severity="danger" @click="removeInput(index)" />
           </div>
           <Button icon="pi pi-plus" @click="addInput()" class="w-full!" />
@@ -102,8 +102,10 @@ const unsubscribeUpdateEq = rkdpProvider.subscribe("equationsUpdated", () => {
           </div>
         </template>
       </Card>
+      <div class="p-2"></div>
+      <Button label="Рассчитать" />
     </div>
-    <div class="grow m-8 ml-0">
+    <div class="md:basis-2/3">
       <Chart></Chart>
     </div>
   </main>
