@@ -94,7 +94,7 @@ watch(solveTaskResult, (newValue) => {
     if (key == 'x') return;
     chartData.value.datasets.push(
       {
-      label: 'Series ' + key,
+      label: 'График оси ' + key,
       data: newValue.map((point) => {
         return {x: point.x, y: point[key]}
       }),
@@ -108,7 +108,7 @@ watch(solveTaskResult, (newValue) => {
 const chartData = ref<ChartDataProp>({
   datasets: [
     {
-      label: 'My XY Series',
+      label: 'Пример',
       data: [
         { x: 0, y: 3 },
         { x: 1, y: 5 },
@@ -138,7 +138,6 @@ const chartOptions = ref<ChartOptionsProp>({
       },
     },
     y: {
-      beginAtZero: true,
       title: {
         display: true,
         text: 'Y value',
@@ -153,13 +152,17 @@ const chartOptions = ref<ChartOptionsProp>({
     },
     title: {
       display: true,
-      text: 'Line Graph of (x, y) Points',
+      text: 'График',
     },
   },
 })
 </script>
 
 <template>
+  <header class="flex justify-between p-4 pb-0">
+    <p>Дорман-Принс построитель</p>
+    <ToggleButton v-model="theme.isDark.value" off-label="Светлый" off-icon="pi pi-sun" on-label="Темный" on-icon="pi pi-moon" />
+  </header>
   <main class="flex justify-center items-center flex-col md:flex-row gap-4 p-4">
     <div class="md:basis-1/3 flex flex-col">
       <Card>
