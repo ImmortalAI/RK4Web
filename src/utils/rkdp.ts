@@ -27,57 +27,60 @@ export interface SolutionPoint {
 }
 
 export class DormandPrinceSolver {
-  private math: MathJsInstance;
-  private rawEquations: EquationInput[] = [];
+  private _math: MathJsInstance;
+  private _rawEquations: EquationInput[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private funcs: ((scope: any) => number)[] = [];
-  private variables: string[] = [];
-  private initConds: Record<string, number> = {};
-  private range: Range = { start: 0, end: 1, initialStep: 0.1 };
-  private tolerance: number = 1e-12;
-  private subscribers = new Map<string, Set<Subscriber>>();
+  private _functions: ((scope: any) => number)[] = [];
+  private _variables: string[] = [];
+  private _initialConditions: Record<string, number> = {};
+  private _range: Range = { start: 0, end: 1, initialStep: 0.1 };
+  private _absoluteTolerance: number = 1e-6;
+  private _relativeTolerance: number = 1e-3;
+  private _subscribers = new Map<string, Set<Subscriber>>();
   private _cancelRequested = false;
 
-  constructor(tolerance: number = 1e-6) {
-    this.math = create(all);
-    this.tolerance = tolerance;
+  constructor(atol: number = 1e-6, rtol: number = 1e-3) {
+    this._math = create(all);
+    this._absoluteTolerance = atol;
+    this._relativeTolerance = rtol;
   }
 
   addEquations(eqs: EquationInput[]) {
-    this.rawEquations = eqs;
+    this._rawEquations = eqs;
     this.parseEquations();
-    this.emit('equationsUpdated', this.variables.slice());
+    this.emit('equationsUpdated', this._variables.slice());
   }
 
   setInitialConditions(conds: Record<string, number>) {
     for (const v of Object.keys(conds)) {
-      if (!this.variables.includes(v)) {
+      if (!this._variables.includes(v)) {
         throw new Error(`Unknown variable '${v}'.`);
       }
     }
-    this.initConds = { ...conds };
-    this.emit('initialConditionsChanged', this.initConds);
+    this._initialConditions = { ...conds };
+    this.emit('initialConditionsChanged', this._initialConditions);
   }
 
   getVariableNames(): string[] {
-    return this.variables.slice();
+    return this._variables.slice();
   }
 
   setRange(start: number, end: number, initialStep: number) {
     if (end <= start) throw new Error('End must be > start');
-    this.range = { start, end, initialStep };
-    this.emit('rangeChanged', this.range);
+    this._range = { start, end, initialStep };
+    this.emit('rangeChanged', this._range);
   }
 
-  setTolerance(tol: number) {
-    this.tolerance = tol;
-    this.emit('toleranceChanged', tol);
+  setTolerance(atol: number, rtol: number) {
+    this._absoluteTolerance = atol;
+    this._relativeTolerance = rtol;
+    this.emit('toleranceChanged', atol, rtol);
   }
 
   subscribe(event: EventType, cb: Subscriber): () => void {
-    if (!this.subscribers.has(event)) this.subscribers.set(event, new Set());
-    this.subscribers.get(event)!.add(cb);
-    return () => this.subscribers.get(event)!.delete(cb);
+    if (!this._subscribers.has(event)) this._subscribers.set(event, new Set());
+    this._subscribers.get(event)!.add(cb);
+    return () => this._subscribers.get(event)!.delete(cb);
   }
 
   cancel() {
@@ -85,27 +88,27 @@ export class DormandPrinceSolver {
     this.emit('calculationCanceled');
   }
 
-  async calculate(): Promise<SolutionPoint[]> {
+  async calculate(useAdaptive: boolean): Promise<SolutionPoint[]> {
     this.checkReady();
     this._cancelRequested = false;
 
-    const { start, end, initialStep } = this.range;
+    const { start, end, initialStep } = this._range;
 
     let x = start;
-    let y = this.variables.map((v) => {
-      if (this.initConds[v] === undefined) throw new Error(`Missing IC for ${v}`);
-      return this.initConds[v];
+    let y = this._variables.map((v) => {
+      if (this._initialConditions[v] === undefined) throw new Error(`Missing IC for ${v}`);
+      return this._initialConditions[v];
     });
 
     const initialPoint: SolutionPoint = { x };
-    this.variables.forEach((v, i) => (initialPoint[v] = y[i]));
+    this._variables.forEach((v, i) => (initialPoint[v] = y[i]));
     const results: SolutionPoint[] = [initialPoint];
-    this.emit('calculationStarted', { range: this.range, tolerance: this.tolerance });
+    this.emit('calculationStarted', this._range);
 
     let h = initialStep;
-    const safety = 0.9;
-    const maxFactor = 3;
-    const minFactor = 0.3;
+    const safety = 0.8;
+    const minH = 1e-10;
+    const maxH = (end - start) * 0.05;
 
     while (x < end) {
       if (this._cancelRequested) break;
@@ -113,26 +116,44 @@ export class DormandPrinceSolver {
 
       const { y5, y4 } = this.dormandPrinceStep(x, y, h);
 
-      const err = Math.max(...y5.map((yi5, i) => Math.abs(yi5 - y4[i])));
-      //const tol = this.tolerance * Math.max(1, ...y5.map(Math.abs));
+      if (useAdaptive) {
+        const tol = y5.map(
+          (yi5, i) => this._absoluteTolerance + this._relativeTolerance * Math.max(y[i], yi5),
+        );
+        const err_all = y5.map((yi5, i) => Math.abs(yi5 - y4[i]));
+        const err = Math.max(...err_all.map((err_i, i) => err_i / tol[i]));
 
-      //if (err <= tol) {
-      x += h;
-      y = y5;
-      const point: SolutionPoint = { x };
-      this.variables.forEach((v, i) => {
-        const splitted = v.split('_');
-        if (point[splitted[0]] == undefined && splitted[1] === '0') {
-          point[v] = y[i];
+        if (err <= 1) {
+          x += h;
+          y = y5;
+          const point: SolutionPoint = { x };
+          this._variables.forEach((v, i) => {
+            const splitted = v.split('_');
+            if (point[splitted[0]] == undefined && splitted[1] === '0') {
+              point[v] = y[i];
+            }
+          });
+          results.push(point);
+          this.emit('calculationProgress', { x, step: h, error: err });
         }
-      });
 
-      results.push(point);
-      this.emit('calculationProgress', { x, step: h, error: err });
-      //}
+        h = h * safety * Math.pow(1 / err, 1 / 5);
+        h = Math.max(minH, Math.min(h, maxH));
+      } else {
+        const err = Math.max(...y5.map((yi5, i) => Math.abs(yi5 - y4[i])));
+        x += h;
+        y = y5;
+        const point: SolutionPoint = { x };
+        this._variables.forEach((v, i) => {
+          const splitted = v.split('_');
+          if (point[splitted[0]] == undefined && splitted[1] === '0') {
+            point[v] = y[i];
+          }
+        });
 
-      //const factor = safety * Math.pow(tol / (err || 1e-16), 1 / 5);
-      //h = Math.min(maxFactor, Math.max(minFactor, factor)) * h;
+        results.push(point);
+        this.emit('calculationProgress', { x, step: h, error: err });
+      }
     }
 
     if (this._cancelRequested) {
@@ -166,8 +187,8 @@ export class DormandPrinceSolver {
         (yi, j) => yi + k.slice(0, i).reduce((sum, ks, m) => sum + ks[j] * (a[i][m] || 0), 0) * h,
       );
       const scope: Record<string, number> = { x: xi };
-      this.variables.forEach((v, j) => (scope[v] = yi[j]));
-      k[i] = this.funcs.map((fn) => fn(scope));
+      this._variables.forEach((v, j) => (scope[v] = yi[j]));
+      k[i] = this._functions.map((fn) => fn(scope));
     }
     const y5 = y.map((yi, j) => yi + h * b5.reduce((sum, bij, m) => sum + bij * k[m][j], 0));
     const y4 = y.map((yi, j) => yi + h * b4.reduce((sum, bij, m) => sum + bij * k[m][j], 0));
@@ -176,49 +197,49 @@ export class DormandPrinceSolver {
 
   private parseEquations() {
     const map: Record<string, { order: number; func: EvalFunction }> = {};
-    for (const eq of this.rawEquations) {
+    for (const eq of this._rawEquations) {
       const [lhs, rhs] = eq.split('=');
       if (!rhs) throw new Error(`Invalid equation '${eq}'`);
       const m = lhs.trim().match(/([a-zA-Z]+)_(\d+)/);
       if (!m) throw new Error(`Bad var in '${lhs}'`);
       const base = m[1],
         ord = +m[2];
-      const node = this.math.parse(rhs);
+      const node = this._math.parse(rhs);
       const code = node.compile();
       map[base] = { order: ord, func: code };
     }
 
-    this.variables = [];
-    this.funcs = [];
+    this._variables = [];
+    this._functions = [];
     for (const base of Object.keys(map).sort()) {
       const { order } = map[base];
       for (let k = 0; k < order - 1; k++) {
         const varName = `${base}_${k}`;
-        this.variables.push(varName);
+        this._variables.push(varName);
         if (k < order) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          this.funcs.push((scope: any) => scope[`${base}_${k + 1}`]);
+          this._functions.push((scope: any) => scope[`${base}_${k + 1}`]);
         }
       }
       const topVar = `${base}_${order - 1}`;
-      this.variables.push(topVar);
+      this._variables.push(topVar);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      this.funcs.push((scope: any) => map[base].func.evaluate(scope));
+      this._functions.push((scope: any) => map[base].func.evaluate(scope));
     }
   }
 
   private checkReady() {
-    if (!this.rawEquations.length) throw new Error('No equations set');
+    if (!this._rawEquations.length) throw new Error('No equations set');
     if (
-      this.range.start >= this.range.end ||
-      this.range.start + this.range.initialStep >= this.range.end
+      this._range.start >= this._range.end ||
+      this._range.start + this._range.initialStep >= this._range.end
     )
       throw new Error('Range incorrect');
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private emit(event: EventType, ...args: any[]) {
-    const subs = this.subscribers.get(event);
+    const subs = this._subscribers.get(event);
     if (subs) {
       for (const cb of subs) cb(...args);
     }

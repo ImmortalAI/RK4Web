@@ -92,8 +92,9 @@ const tempSub2 = rkdpProvider.subscribe('rangeChanged', (n: Range) =>
 
 const solveTaskResult = ref<SolutionPoint[]>([]);
 
+const isAdaptiveStep = ref(false);
 const startSolve = async (mEvent: MouseEvent) => {
-  await rkdpProvider.calculate();
+  await rkdpProvider.calculate(isAdaptiveStep.value);
 };
 
 const calculateButtonDisabled = ref(false);
@@ -271,6 +272,10 @@ const chartOptions = ref<ChartOptionsProp>({
               ></InputNumber>
               <label for="step">Шаг</label>
             </FloatLabel>
+            <div class="flex items-center justify-between">
+              <label for="adaptiveSwitch">Адаптивный шаг</label>
+              <ToggleSwitch v-model="isAdaptiveStep"></ToggleSwitch>
+            </div>
           </div>
         </template>
       </Card>

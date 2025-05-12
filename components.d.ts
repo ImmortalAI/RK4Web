@@ -16,5 +16,6 @@ declare module 'vue' {
     InputNumber: typeof import('primevue/inputnumber')['default']
     MathLiveInput: typeof import('./src/components/MathLiveInput.vue')['default']
     ToggleButton: typeof import('primevue/togglebutton')['default']
+    ToggleSwitch: typeof import('primevue/toggleswitch')['default']
   }
 }
