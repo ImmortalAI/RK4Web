@@ -1,4 +1,4 @@
-import type { SolutionPoint } from "@/utils/rkdp";
+import type { SolutionPoint } from '@/utils/rkdp';
 
 export function downloadCSV(data: SolutionPoint[], filename = 'solution.csv') {
   if (!data.length) return;
@@ -7,9 +7,7 @@ export function downloadCSV(data: SolutionPoint[], filename = 'solution.csv') {
 
   const csvRows = [
     headers.join(','),
-    ...data.map(row =>
-      headers.map(header => row[header]?.toString() ?? '').join(',')
-    )
+    ...data.map((row) => headers.map((header) => row[header]?.toString() ?? '').join(',')),
   ];
 
   const csvContent = csvRows.join('\r\n');

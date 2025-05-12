@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, watch, type PropType } from 'vue';
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { MathfieldElement } from 'mathlive';
 
 const props = defineProps<{

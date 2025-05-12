@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from 'vue';
+import { onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 
 import { useTheme } from '@/composables/useTheme';
 import { DormandPrinceSolver } from '@/utils/rkdp';
@@ -75,11 +75,6 @@ watch(initialConditions, (newConditions) => {
   rkdpProvider.setInitialConditions(newConditions);
 });
 
-// TODO delete in future
-const tempSub = rkdpProvider.subscribe('initialConditionsChanged', (n: Record<string, number>) =>
-  console.log('IC changed: ' + Object.keys(n).map((value) => n[value])),
-);
-
 watch(
   range,
   (newVal) => {
@@ -88,15 +83,10 @@ watch(
   { deep: true },
 );
 
-// TODO delete in future
-const tempSub2 = rkdpProvider.subscribe('rangeChanged', (n: Range) =>
-  console.log(`New range: ${n.start} ${n.end} ${n.initialStep}`),
-);
-
 const solveTaskResult = ref<SolutionPoint[]>([]);
 
 const isAdaptiveStep = ref(false);
-const startSolve = async (mEvent: MouseEvent) => {
+const startSolve = async () => {
   await rkdpProvider.calculate(isAdaptiveStep.value);
 };
 
@@ -202,6 +192,13 @@ function downloadChart() {
   link.click();
   document.body.removeChild(link);
 }
+
+onUnmounted(() => {
+  unsubscribeUpdateEq();
+  unsubCalculateStart();
+  unsubCalculateProgress();
+  unsubscribeCalculateComplete();
+});
 </script>
 
 <template>
