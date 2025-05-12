@@ -13,6 +13,17 @@ const range = ref<Range>({ start: 0, end: 1, initialStep: 0.1 });
 
 onMounted(() => {
   addInput('y_1=y_0+5 x');
+
+  solveTaskResult.value = [
+    { x: 0, y: 0 },
+    { x: 0.1, y: 0.026 },
+    { x: 0.272, y: 0.204 },
+    { x: 0.442, y: 0.57 },
+    { x: 0.606, y: 1.137 },
+    { x: 0.769, y: 1.944 },
+    { x: 0.945, y: 3.135 },
+    { x: 1, y: 3.591 },
+  ];
 });
 
 interface MathInputItem {
@@ -118,16 +129,7 @@ const chartData = ref<ChartDataProp>({
   datasets: [
     {
       label: 'Пример',
-      data: [
-        { x: 0, y: 0 },
-        { x: 0.1, y: 0.026 },
-        { x: 0.272, y: 0.204 },
-        { x: 0.442, y: 0.57 },
-        { x: 0.606, y: 1.137 },
-        { x: 0.769, y: 1.944 },
-        { x: 0.945, y: 3.135 },
-        { x: 1, y: 3.591 },
-      ],
+      data: [],
       backgroundColor: 'rgba(75, 192, 192, 0.4)',
       borderColor: 'rgba(75, 192, 192, 1)',
       fill: false,
@@ -207,16 +209,16 @@ const chartOptions = ref<ChartOptionsProp>({
         <template #title>Диапазон расчета</template>
         <template #content>
           <div class="flex flex-col gap-8 mt-8">
-            <FloatLabel class="relative">
+            <FloatLabel>
               <InputNumber v-model="range.start" input-id="fromX" :maxFractionDigits="3" class="w-full"></InputNumber>
               <label for="fromX">Рассчитать от</label>
             </FloatLabel>
-            <FloatLabel class="relative">
+            <FloatLabel>
               <InputNumber v-model="range.end" input-id="toX" :maxFractionDigits="3" class="w-full"></InputNumber>
               <label for="toX">Рассчитать до</label>
             </FloatLabel>
-            <FloatLabel class="relative">
-              <InputNumber v-model="range.initialStep" input-id="step" :minFractionDigits="1" :maxFractionDigits="3"
+            <FloatLabel>
+              <InputNumber v-model="range.initialStep" input-id="step" :minFractionDigits="1" :maxFractionDigits="6"
                 class="w-full"></InputNumber>
               <label for="step">Шаг</label>
             </FloatLabel>
