@@ -117,12 +117,18 @@ export class DormandPrinceSolver {
       //const tol = this.tolerance * Math.max(1, ...y5.map(Math.abs));
 
       //if (err <= tol) {
-        x += h;
-        y = y5;
-        const point: SolutionPoint = { x };
-        this.variables.forEach((v, i) => (point[v] = y[i]));
-        results.push(point);
-        this.emit('calculationProgress', { x, step: h, error: err });
+      x += h;
+      y = y5;
+      const point: SolutionPoint = { x };
+      this.variables.forEach((v, i) => {
+        const splitted = v.split('_');
+        if (point[splitted[0]] == undefined && splitted[1] === '0') {
+          point[v] = y[i];
+        }
+      });
+
+      results.push(point);
+      this.emit('calculationProgress', { x, step: h, error: err });
       //}
 
       //const factor = safety * Math.pow(tol / (err || 1e-16), 1 / 5);
