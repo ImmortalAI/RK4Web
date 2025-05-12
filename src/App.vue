@@ -152,10 +152,10 @@ const chartOptions = ref<ChartOptionsProp>({
         text: 'X value',
       },
       ticks: {
-        color: bodyStyles.getPropertyValue('--p-surface-500')
+        color: bodyStyles.getPropertyValue('--p-surface-500'),
       },
       grid: {
-        color: bodyStyles.getPropertyValue('--p-surface-400')
+        color: bodyStyles.getPropertyValue('--p-surface-400'),
       },
     },
     y: {
@@ -164,10 +164,10 @@ const chartOptions = ref<ChartOptionsProp>({
         text: 'Y value',
       },
       ticks: {
-        color: bodyStyles.getPropertyValue('--p-surface-500')
+        color: bodyStyles.getPropertyValue('--p-surface-500'),
       },
       grid: {
-        color: bodyStyles.getPropertyValue('--p-surface-400')
+        color: bodyStyles.getPropertyValue('--p-surface-400'),
       },
     },
   },
@@ -188,17 +188,30 @@ const chartOptions = ref<ChartOptionsProp>({
 <template>
   <header class="flex justify-between p-4 pb-0">
     <p>Дорман-Принс построитель</p>
-    <ToggleButton v-model="theme.isDark.value" off-label="Светлый" off-icon="pi pi-sun" on-label="Темный"
-      on-icon="pi pi-moon" />
+    <ToggleButton
+      v-model="theme.isDark.value"
+      off-label="Светлый"
+      off-icon="pi pi-sun"
+      on-label="Темный"
+      on-icon="pi pi-moon"
+    />
   </header>
   <main class="flex justify-center items-center flex-col md:flex-row gap-4 p-4">
     <div class="md:basis-1/3 flex flex-col">
       <Card>
         <template #title> Дифференциальные уравнения </template>
         <template #content>
-          <div class="flex items-center gap-2 border border-primary rounded-xl p-2 m-2"
-            v-for="(input, index) in mathinputFieldsData" :key="index">
-            <MathLiveInput class="w-full" v-model="input.value" :dark="theme.isDark.value" format="ascii" />
+          <div
+            class="flex items-center gap-2 border border-primary rounded-xl p-2 m-2"
+            v-for="(input, index) in mathinputFieldsData"
+            :key="index"
+          >
+            <MathLiveInput
+              class="w-full"
+              v-model="input.value"
+              :dark="theme.isDark.value"
+              format="ascii"
+            />
             <Button icon="pi pi-minus" severity="danger" @click="removeInput(index)" />
           </div>
           <Button icon="pi pi-plus" @click="addInput()" class="w-full!" />
@@ -209,10 +222,18 @@ const chartOptions = ref<ChartOptionsProp>({
         <template #title>Начальные условия</template>
         <template #content>
           <div class="flex flex-col">
-            <div v-for="(value, key) in initialConditions" :key="key" class="flex gap-2 items-center mb-1">
+            <div
+              v-for="(value, key) in initialConditions"
+              :key="key"
+              class="flex gap-2 items-center mb-1"
+            >
               <label :for="'for-' + key" class="whitespace-nowrap">{{ key }}(x) =</label>
-              <InputNumber v-model="initialConditions[key]" :input-id="'for-' + key" :maxFractionDigits="6"
-                class="w-full"></InputNumber>
+              <InputNumber
+                v-model="initialConditions[key]"
+                :input-id="'for-' + key"
+                :maxFractionDigits="6"
+                class="w-full"
+              ></InputNumber>
             </div>
           </div>
         </template>
@@ -223,16 +244,31 @@ const chartOptions = ref<ChartOptionsProp>({
         <template #content>
           <div class="flex flex-col gap-8 mt-8">
             <FloatLabel>
-              <InputNumber v-model="range.start" input-id="fromX" :maxFractionDigits="3" class="w-full"></InputNumber>
+              <InputNumber
+                v-model="range.start"
+                input-id="fromX"
+                :maxFractionDigits="3"
+                class="w-full"
+              ></InputNumber>
               <label for="fromX">Рассчитать от</label>
             </FloatLabel>
             <FloatLabel>
-              <InputNumber v-model="range.end" input-id="toX" :maxFractionDigits="3" class="w-full"></InputNumber>
+              <InputNumber
+                v-model="range.end"
+                input-id="toX"
+                :maxFractionDigits="3"
+                class="w-full"
+              ></InputNumber>
               <label for="toX">Рассчитать до</label>
             </FloatLabel>
             <FloatLabel>
-              <InputNumber v-model="range.initialStep" input-id="step" :minFractionDigits="1" :maxFractionDigits="6"
-                class="w-full"></InputNumber>
+              <InputNumber
+                v-model="range.initialStep"
+                input-id="step"
+                :minFractionDigits="1"
+                :maxFractionDigits="6"
+                class="w-full"
+              ></InputNumber>
               <label for="step">Шаг</label>
             </FloatLabel>
           </div>
