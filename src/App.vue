@@ -5,6 +5,7 @@ import { useTheme } from '@/composables/useTheme';
 import { DormandPrinceSolver } from '@/utils/rkdp';
 import type { Range, SolutionPoint } from '@/utils/rkdp';
 import type { ChartDataProp, ChartOptionsProp } from '@/types/chart';
+import { downloadCSV } from './utils/downloaderCSV';
 
 const theme = useTheme();
 const bodyStyles = window.getComputedStyle(document.body);
@@ -197,7 +198,7 @@ const chartOptions = ref<ChartOptionsProp>({
       on-icon="pi pi-moon"
     />
   </header>
-  <main class="flex justify-center items-center flex-col md:flex-row gap-4 p-4">
+  <main class="flex justify-center items-start flex-col md:flex-row gap-4 p-4">
     <div class="md:basis-1/3 flex flex-col">
       <Card>
         <template #title> Дифференциальные уравнения </template>
@@ -281,6 +282,8 @@ const chartOptions = ref<ChartOptionsProp>({
       </Card>
       <div class="p-2"></div>
       <Button label="Рассчитать" @click="startSolve" :disabled="calculateButtonDisabled" />
+      <Divider></Divider>
+      <Button label="Скачать CSV" @click="downloadCSV([...solveTaskResult])" />
     </div>
     <div class="md:basis-2/3 border border-surface-400">
       <Chart type="line" :data="chartData" :options="chartOptions" class="h-[80vh]"></Chart>

@@ -14,7 +14,6 @@ export function downloadCSV(data: SolutionPoint[], filename = 'solution.csv') {
 
   const csvContent = csvRows.join('\r\n');
 
-  // Создаём Blob и инициируем загрузку
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
 
