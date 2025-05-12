@@ -7,6 +7,7 @@ import type { Range, SolutionPoint } from '@/utils/rkdp';
 import type { ChartDataProp, ChartOptionsProp } from '@/types/chart';
 
 const theme = useTheme();
+const bodyStyles = window.getComputedStyle(document.body);
 
 const rkdpProvider = reactive<DormandPrinceSolver>(new DormandPrinceSolver());
 const range = ref<Range>({ start: 0, end: 1, initialStep: 0.1 });
@@ -150,11 +151,23 @@ const chartOptions = ref<ChartOptionsProp>({
         display: true,
         text: 'X value',
       },
+      ticks: {
+        color: bodyStyles.getPropertyValue('--p-surface-500')
+      },
+      grid: {
+        color: bodyStyles.getPropertyValue('--p-surface-400')
+      },
     },
     y: {
       title: {
         display: true,
         text: 'Y value',
+      },
+      ticks: {
+        color: bodyStyles.getPropertyValue('--p-surface-500')
+      },
+      grid: {
+        color: bodyStyles.getPropertyValue('--p-surface-400')
       },
     },
   },
