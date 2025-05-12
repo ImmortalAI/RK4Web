@@ -34,7 +34,7 @@ export class DormandPrinceSolver {
   private variables: string[] = [];
   private initConds: Record<string, number> = {};
   private range: Range = { start: 0, end: 1, initialStep: 0.1 };
-  private tolerance: number = 1e-6;
+  private tolerance: number = 1e-12;
   private subscribers = new Map<string, Set<Subscriber>>();
   private _cancelRequested = false;
 
@@ -104,8 +104,8 @@ export class DormandPrinceSolver {
 
     let h = initialStep;
     const safety = 0.9;
-    const maxFactor = 5;
-    const minFactor = 0.2;
+    const maxFactor = 3;
+    const minFactor = 0.3;
 
     while (x < end) {
       if (this._cancelRequested) break;
@@ -114,19 +114,19 @@ export class DormandPrinceSolver {
       const { y5, y4 } = this.dormandPrinceStep(x, y, h);
 
       const err = Math.max(...y5.map((yi5, i) => Math.abs(yi5 - y4[i])));
-      const tol = this.tolerance * Math.max(1, ...y5.map(Math.abs));
+      //const tol = this.tolerance * Math.max(1, ...y5.map(Math.abs));
 
-      if (err <= tol) {
+      //if (err <= tol) {
         x += h;
         y = y5;
         const point: SolutionPoint = { x };
         this.variables.forEach((v, i) => (point[v] = y[i]));
         results.push(point);
         this.emit('calculationProgress', { x, step: h, error: err });
-      }
+      //}
 
-      const factor = safety * Math.pow(tol / (err || 1e-16), 1 / 5);
-      h = Math.min(maxFactor, Math.max(minFactor, factor)) * h;
+      //const factor = safety * Math.pow(tol / (err || 1e-16), 1 / 5);
+      //h = Math.min(maxFactor, Math.max(minFactor, factor)) * h;
     }
 
     if (this._cancelRequested) {
