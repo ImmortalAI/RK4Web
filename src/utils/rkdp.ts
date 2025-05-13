@@ -101,7 +101,12 @@ export class DormandPrinceSolver {
     });
 
     const initialPoint: SolutionPoint = { x };
-    this._variables.forEach((v, i) => (initialPoint[v] = y[i]));
+    this._variables.forEach((v, i) => {
+      const splitted = v.split('_');
+      if (!(splitted[0] in initialPoint) && splitted[1] == '0') {
+        initialPoint[splitted[0]] = y[i];
+      }
+    });
     const results: SolutionPoint[] = [initialPoint];
     this.emit('calculationStarted', this._range);
 
@@ -129,10 +134,11 @@ export class DormandPrinceSolver {
           const point: SolutionPoint = { x };
           this._variables.forEach((v, i) => {
             const splitted = v.split('_');
-            if (point[splitted[0]] == undefined && splitted[1] === '0') {
-              point[v] = y[i];
+            if (!(splitted[0] in point) && splitted[1] === '0') {
+              point[splitted[0]] = y[i];
             }
           });
+
           results.push(point);
           this.emit('calculationProgress', { x, step: h, error: err });
         }
@@ -146,8 +152,8 @@ export class DormandPrinceSolver {
         const point: SolutionPoint = { x };
         this._variables.forEach((v, i) => {
           const splitted = v.split('_');
-          if (point[splitted[0]] == undefined && splitted[1] === '0') {
-            point[v] = y[i];
+          if (!(splitted[0] in point) && splitted[1] === '0') {
+            point[splitted[0]] = y[i];
           }
         });
 
