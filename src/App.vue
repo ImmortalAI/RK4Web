@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from 'vue';
+import { onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 
 import { useTheme } from '@/composables/useTheme';
 import { DormandPrinceSolver } from '@/utils/rkdp';
 import type { Range, SolutionPoint } from '@/utils/rkdp';
 import type { ChartDataProp, ChartOptionsProp } from '@/types/chart';
+import { downloadCSV } from '@/utils/downloaderCSV';
 
 const theme = useTheme();
 const bodyStyles = window.getComputedStyle(document.body);
 
 const rkdpProvider = reactive<DormandPrinceSolver>(new DormandPrinceSolver());
 const range = ref<Range>({ start: 0, end: 1, initialStep: 0.1 });
+
+const saveDialogVisible = ref(false);
 
 onMounted(() => {
   addInput('y_1=y_0+5 x');
@@ -72,11 +75,6 @@ watch(initialConditions, (newConditions) => {
   rkdpProvider.setInitialConditions(newConditions);
 });
 
-// TODO delete in future
-const tempSub = rkdpProvider.subscribe('initialConditionsChanged', (n: Record<string, number>) =>
-  console.log('IC changed: ' + Object.keys(n).map((value) => n[value])),
-);
-
 watch(
   range,
   (newVal) => {
@@ -85,15 +83,11 @@ watch(
   { deep: true },
 );
 
-// TODO delete in future
-const tempSub2 = rkdpProvider.subscribe('rangeChanged', (n: Range) =>
-  console.log(`New range: ${n.start} ${n.end} ${n.initialStep}`),
-);
-
 const solveTaskResult = ref<SolutionPoint[]>([]);
 
-const startSolve = async (mEvent: MouseEvent) => {
-  await rkdpProvider.calculate();
+const isAdaptiveStep = ref(false);
+const startSolve = async () => {
+  await rkdpProvider.calculate(isAdaptiveStep.value);
 };
 
 const calculateButtonDisabled = ref(false);
@@ -183,6 +177,28 @@ const chartOptions = ref<ChartOptionsProp>({
     },
   },
 });
+
+const chartRef = ref();
+function downloadChart() {
+  const chartInstance = chartRef.value?.chart;
+  if (!chartInstance) return;
+
+  const base64Image = chartInstance.toBase64Image();
+
+  const link = document.createElement('a');
+  link.href = base64Image;
+  link.download = 'chart.png';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+onUnmounted(() => {
+  unsubscribeUpdateEq();
+  unsubCalculateStart();
+  unsubCalculateProgress();
+  unsubscribeCalculateComplete();
+});
 </script>
 
 <template>
@@ -196,7 +212,7 @@ const chartOptions = ref<ChartOptionsProp>({
       on-icon="pi pi-moon"
     />
   </header>
-  <main class="flex justify-center items-center flex-col md:flex-row gap-4 p-4">
+  <main class="flex justify-center items-start flex-col md:flex-row gap-4 p-4">
     <div class="md:basis-1/3 flex flex-col">
       <Card>
         <template #title> Дифференциальные уравнения </template>
@@ -271,14 +287,37 @@ const chartOptions = ref<ChartOptionsProp>({
               ></InputNumber>
               <label for="step">Шаг</label>
             </FloatLabel>
+            <div class="flex items-center justify-between">
+              <label for="adaptiveSwitch">Адаптивный шаг</label>
+              <ToggleSwitch v-model="isAdaptiveStep"></ToggleSwitch>
+            </div>
           </div>
         </template>
       </Card>
       <div class="p-2"></div>
       <Button label="Рассчитать" @click="startSolve" :disabled="calculateButtonDisabled" />
+      <Divider></Divider>
+      <Button label="Загрузить результат" @click="saveDialogVisible = true" />
     </div>
     <div class="md:basis-2/3 border border-surface-400">
-      <Chart type="line" :data="chartData" :options="chartOptions" class="h-[80vh]"></Chart>
+      <Chart
+        type="line"
+        :data="chartData"
+        :options="chartOptions"
+        class="h-[80vh]"
+        ref="chartRef"
+      ></Chart>
     </div>
   </main>
+  <Dialog
+    v-model:visible="saveDialogVisible"
+    header="Выберите способ сохранения"
+    position="bottomleft"
+    modal
+  >
+    <div class="flex flex-col gap-2 m-2">
+      <Button label="Загрузить как CSV" @click="downloadCSV([...solveTaskResult])" />
+      <Button label="Загрузить как изображение" @click="downloadChart"></Button>
+    </div>
+  </Dialog>
 </template>

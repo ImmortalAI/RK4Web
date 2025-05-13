@@ -1,5 +1,3 @@
-import { boolean } from 'mathjs';
-
 export interface XYPoint {
   x: number;
   y: number;
