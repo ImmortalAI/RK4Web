@@ -1,20 +1,26 @@
 <script setup lang="ts">
+// #region Ext Libs Imports
 import { onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+// #endregion
 
+// #region Local Imports
 import { useTheme } from '@/composables/useTheme';
 import { DormandPrinceSolver } from '@/utils/rkdp';
 import type { Range, SolutionPoint } from '@/utils/rkdp';
 import type { ChartDataProp, ChartOptionsProp } from '@/types/chart';
 import { downloadCSV } from '@/utils/downloaderCSV';
+// #endregion
 
+// #region Theming
 const theme = useTheme();
 const bodyStyles = window.getComputedStyle(document.body);
+// #endregion
 
+// #region ODE Solver
 const rkdpProvider = reactive<DormandPrinceSolver>(new DormandPrinceSolver());
-const range = ref<Range>({ start: 0, end: 1, initialStep: 0.1 });
+// #endregion
 
-const saveDialogVisible = ref(false);
-
+// #region Initial State
 onMounted(() => {
   addInput('y_1=y_0+5 x');
 
@@ -29,7 +35,9 @@ onMounted(() => {
     { x: 1, y: 3.591 },
   ];
 });
+// #endregion
 
+// #region ODE Input
 interface MathInputItem {
   id: number;
   value: string;
@@ -61,7 +69,9 @@ watch(
   },
   { deep: true },
 );
+// #endregion
 
+// #region Initial Conditions
 const initialConditions = reactive<Record<string, number>>({});
 
 const unsubscribeUpdateEq = rkdpProvider.subscribe('equationsUpdated', () => {
@@ -74,7 +84,10 @@ const unsubscribeUpdateEq = rkdpProvider.subscribe('equationsUpdated', () => {
 watch(initialConditions, (newConditions) => {
   rkdpProvider.setInitialConditions(newConditions);
 });
+// #endregion
 
+// #region Range
+const range = ref<Range>({ start: 0, end: 1, initialStep: 0.1 });
 watch(
   range,
   (newVal) => {
@@ -82,7 +95,9 @@ watch(
   },
   { deep: true },
 );
+// #endregion
 
+// #region Solve
 const solveTaskResult = ref<SolutionPoint[]>([]);
 
 const isAdaptiveStep = ref(false);
@@ -119,7 +134,9 @@ watch(solveTaskResult, (newValue) => {
     });
   });
 });
+// #endregion
 
+// #region Chart Settings
 const chartData = ref<ChartDataProp>({
   datasets: [
     {
@@ -177,7 +194,10 @@ const chartOptions = ref<ChartOptionsProp>({
     },
   },
 });
+// #endregion
 
+// #region Download Chart Image
+const saveDialogVisible = ref(false);
 const chartRef = ref();
 function downloadChart() {
   const chartInstance = chartRef.value?.chart;
@@ -192,42 +212,32 @@ function downloadChart() {
   link.click();
   document.body.removeChild(link);
 }
+// #endregion
 
+// #region Cleanup Events
 onUnmounted(() => {
   unsubscribeUpdateEq();
   unsubCalculateStart();
   unsubCalculateProgress();
   unsubscribeCalculateComplete();
 });
+// #endregion
 </script>
 
 <template>
   <header class="flex justify-between items-center p-2 pl-4 pr-4 m-2 border-2 rounded-3xl border-surface-600">
     <p>Дорманд-Принс построитель</p>
-    <ToggleButton
-      v-model="theme.isDark.value"
-      off-label="Светлый"
-      off-icon="pi pi-sun"
-      on-label="Темный"
-      on-icon="pi pi-moon"
-    />
+    <ToggleButton v-model="theme.isDark.value" off-label="Светлый" off-icon="pi pi-sun" on-label="Темный"
+      on-icon="pi pi-moon" />
   </header>
   <main class="flex justify-center items-start flex-col md:flex-row gap-4 p-4">
     <div class="md:basis-1/3 flex flex-col">
       <Card>
         <template #title> Дифференциальные уравнения </template>
         <template #content>
-          <div
-            class="flex items-center gap-2 border border-primary rounded-xl p-2 m-2"
-            v-for="(input, index) in mathinputFieldsData"
-            :key="index"
-          >
-            <MathLiveInput
-              class="w-full"
-              v-model="input.value"
-              :dark="theme.isDark.value"
-              format="ascii"
-            />
+          <div class="flex items-center gap-2 border border-primary rounded-xl p-2 m-2"
+            v-for="(input, index) in mathinputFieldsData" :key="index">
+            <MathLiveInput class="w-full" v-model="input.value" :dark="theme.isDark.value" format="ascii" />
             <Button icon="pi pi-minus" severity="danger" @click="removeInput(index)" />
           </div>
           <Button icon="pi pi-plus" @click="addInput()" class="w-full!" />
@@ -238,18 +248,10 @@ onUnmounted(() => {
         <template #title>Начальные условия</template>
         <template #content>
           <div class="flex flex-col">
-            <div
-              v-for="(value, key) in initialConditions"
-              :key="key"
-              class="flex gap-2 items-center mb-1"
-            >
+            <div v-for="(value, key) in initialConditions" :key="key" class="flex gap-2 items-center mb-1">
               <label :for="'for-' + key" class="whitespace-nowrap">{{ key }}(x) =</label>
-              <InputNumber
-                v-model="initialConditions[key]"
-                :input-id="'for-' + key"
-                :maxFractionDigits="6"
-                class="w-full"
-              ></InputNumber>
+              <InputNumber v-model="initialConditions[key]" :input-id="'for-' + key" :maxFractionDigits="6"
+                class="w-full"></InputNumber>
             </div>
           </div>
         </template>
@@ -260,31 +262,16 @@ onUnmounted(() => {
         <template #content>
           <div class="flex flex-col gap-8 mt-8">
             <FloatLabel>
-              <InputNumber
-                v-model="range.start"
-                input-id="fromX"
-                :maxFractionDigits="3"
-                class="w-full"
-              ></InputNumber>
+              <InputNumber v-model="range.start" input-id="fromX" :maxFractionDigits="3" class="w-full"></InputNumber>
               <label for="fromX">Рассчитать от</label>
             </FloatLabel>
             <FloatLabel>
-              <InputNumber
-                v-model="range.end"
-                input-id="toX"
-                :maxFractionDigits="3"
-                class="w-full"
-              ></InputNumber>
+              <InputNumber v-model="range.end" input-id="toX" :maxFractionDigits="3" class="w-full"></InputNumber>
               <label for="toX">Рассчитать до</label>
             </FloatLabel>
             <FloatLabel>
-              <InputNumber
-                v-model="range.initialStep"
-                input-id="step"
-                :minFractionDigits="1"
-                :maxFractionDigits="6"
-                class="w-full"
-              ></InputNumber>
+              <InputNumber v-model="range.initialStep" input-id="step" :minFractionDigits="1" :maxFractionDigits="6"
+                class="w-full"></InputNumber>
               <label for="step">Шаг</label>
             </FloatLabel>
             <div class="flex items-center justify-between">
@@ -300,21 +287,10 @@ onUnmounted(() => {
       <Button label="Загрузить результат" @click="saveDialogVisible = true" />
     </div>
     <div class="md:basis-2/3 border border-surface-400">
-      <Chart
-        type="line"
-        :data="chartData"
-        :options="chartOptions"
-        class="h-[80vh]"
-        ref="chartRef"
-      ></Chart>
+      <Chart type="line" :data="chartData" :options="chartOptions" class="h-[80vh]" ref="chartRef"></Chart>
     </div>
   </main>
-  <Dialog
-    v-model:visible="saveDialogVisible"
-    header="Выберите способ сохранения"
-    position="bottomleft"
-    modal
-  >
+  <Dialog v-model:visible="saveDialogVisible" header="Выберите способ сохранения" position="bottomleft" modal>
     <div class="flex flex-col gap-2 m-2">
       <Button label="Загрузить как CSV" @click="downloadCSV([...solveTaskResult])" />
       <Button label="Загрузить как изображение" @click="downloadChart"></Button>
