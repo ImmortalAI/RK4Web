@@ -173,7 +173,7 @@ const chartOptions = ref<ChartOptionsProp>({
     },
     title: {
       display: true,
-      text: 'График',
+      text: 'График решения дифференциальных уравнений',
     },
   },
 });
@@ -202,8 +202,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <header class="flex justify-between p-4 pb-0">
-    <p>Дорман-Принс построитель</p>
+  <header class="flex justify-between items-center p-2 pl-4 pr-4 m-2 border-2 rounded-3xl border-surface-600">
+    <p>Дорманд-Принс построитель</p>
     <ToggleButton
       v-model="theme.isDark.value"
       off-label="Светлый"
