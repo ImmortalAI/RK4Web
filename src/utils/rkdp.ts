@@ -1,19 +1,19 @@
 import { create, all } from 'mathjs';
 import type { MathJsInstance, EvalFunction } from 'mathjs';
+import { TypedEventEmitter } from '@/utils/typedEventEmitter';
 
 type EquationInput = string; // ASCII math expression
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Subscriber = (...args: any[]) => void;
-type EventType =
-  | 'equationsUpdated'
-  | 'initialConditionsChanged'
-  | 'rangeChanged'
-  | 'toleranceChanged'
-  | 'calculationStarted'
-  | 'calculationProgress'
-  | 'calculationCanceled'
-  | 'calculationCompleted';
+type EventMap = {
+  equationsUpdated: string[];
+  initialConditionsChanged: Record<string, number>;
+  rangeChanged: Range;
+  toleranceChanged: { atol: number; rtol: number };
+  calculationStarted: Range;
+  calculationProgress: { x: number; step: number; error: number };
+  calculationCanceled: void;
+  calculationCompleted: SolutionPoint[];
+};
 
 export interface Range {
   start: number;
@@ -26,7 +26,7 @@ export interface SolutionPoint {
   [varName: string]: number;
 }
 
-export class DormandPrinceSolver {
+export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
   private _math: MathJsInstance;
   private _rawEquations: EquationInput[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,10 +36,10 @@ export class DormandPrinceSolver {
   private _range: Range = { start: 0, end: 1, initialStep: 0.1 };
   private _absoluteTolerance: number = 1e-6;
   private _relativeTolerance: number = 1e-3;
-  private _subscribers = new Map<string, Set<Subscriber>>();
   private _cancelRequested = false;
 
   constructor(atol: number = 1e-6, rtol: number = 1e-3) {
+    super();
     this._math = create(all);
     this._absoluteTolerance = atol;
     this._relativeTolerance = rtol;
@@ -74,18 +74,12 @@ export class DormandPrinceSolver {
   setTolerance(atol: number, rtol: number) {
     this._absoluteTolerance = atol;
     this._relativeTolerance = rtol;
-    this.emit('toleranceChanged', atol, rtol);
-  }
-
-  subscribe(event: EventType, cb: Subscriber): () => void {
-    if (!this._subscribers.has(event)) this._subscribers.set(event, new Set());
-    this._subscribers.get(event)!.add(cb);
-    return () => this._subscribers.get(event)!.delete(cb);
+    this.emit('toleranceChanged', { atol, rtol });
   }
 
   cancel() {
     this._cancelRequested = true;
-    this.emit('calculationCanceled');
+    this.emit('calculationCanceled', undefined);
   }
 
   async calculate(useAdaptive: boolean): Promise<SolutionPoint[]> {
@@ -163,7 +157,7 @@ export class DormandPrinceSolver {
     }
 
     if (this._cancelRequested) {
-      this.emit('calculationCanceled');
+      this.emit('calculationCanceled', undefined);
     } else {
       this.emit('calculationCompleted', results);
     }
@@ -206,10 +200,10 @@ export class DormandPrinceSolver {
     for (const eq of this._rawEquations) {
       const [lhs, rhs] = eq.split('=');
       if (!rhs) throw new Error(`Invalid equation '${eq}'`);
-      const m = lhs.trim().match(/([a-zA-Z]+)_(\d+)/);
+      const m = lhs.trim().match(/^([a-zA-Z])('+)$/);
       if (!m) throw new Error(`Bad var in '${lhs}'`);
       const base = m[1],
-        ord = +m[2];
+        ord = m[2].length;
       const node = this._math.parse(rhs);
       const code = node.compile();
       map[base] = { order: ord, func: code };
@@ -241,13 +235,5 @@ export class DormandPrinceSolver {
       this._range.start + this._range.initialStep >= this._range.end
     )
       throw new Error('Range incorrect');
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private emit(event: EventType, ...args: any[]) {
-    const subs = this._subscribers.get(event);
-    if (subs) {
-      for (const cb of subs) cb(...args);
-    }
   }
 }
