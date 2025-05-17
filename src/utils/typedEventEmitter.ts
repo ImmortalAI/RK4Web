@@ -9,6 +9,7 @@
 
 type Listener<T> = T extends void ? () => void : (payload: T) => void;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class TypedEventEmitter<Events extends Record<string, any>> {
   private listeners: {
     [K in keyof Events]?: Set<Listener<Events[K]>>;
@@ -50,6 +51,7 @@ export class TypedEventEmitter<Events extends Record<string, any>> {
    */
   protected emit<K extends keyof Events>(event: K, payload: Events[K]): void {
     this.listeners[event]?.forEach((listener) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (listener as any)(payload);
     });
   }
