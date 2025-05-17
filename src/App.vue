@@ -74,7 +74,7 @@ watch(
 // #region Initial Conditions
 const initialConditions = reactive<Record<string, number>>({});
 
-const unsubscribeUpdateEq = rkdpProvider.subscribe('equationsUpdated', () => {
+const unsubscribeUpdateEq = rkdpProvider.on('equationsUpdated', () => {
   Object.keys(initialConditions).forEach((key) => delete initialConditions[key]);
   rkdpProvider.getVariableNames().forEach((varName) => {
     initialConditions[varName] = 0;
@@ -106,13 +106,13 @@ const startSolve = async () => {
 };
 
 const calculateButtonDisabled = ref(false);
-const unsubCalculateStart = rkdpProvider.subscribe('calculationStarted', () => {
+const unsubCalculateStart = rkdpProvider.on('calculationStarted', () => {
   calculateButtonDisabled.value = true;
 });
 
-const unsubCalculateProgress = rkdpProvider.subscribe('calculationProgress', (o) => console.log(o));
+const unsubCalculateProgress = rkdpProvider.on('calculationProgress', (o) => console.log(o));
 
-const unsubscribeCalculateComplete = rkdpProvider.subscribe(
+const unsubscribeCalculateComplete = rkdpProvider.on(
   'calculationCompleted',
   (result: SolutionPoint[]) => {
     solveTaskResult.value = result;
