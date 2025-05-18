@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // #region Ext Libs Imports
 import { onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { all, create } from 'mathjs';
 // #endregion
 
 // #region Local Imports
@@ -21,8 +22,10 @@ const rkdpProvider = reactive<DormandPrinceSolver>(new DormandPrinceSolver());
 // #endregion
 
 // #region Initial State
+const mathInst = create(all);
+
 onMounted(() => {
-  addInput('y_1=y_0+5 x');
+  addInput();
 
   solveTaskResult.value = [
     { x: 0, y: 0 },
@@ -56,10 +59,11 @@ function removeInput(index: number) {
 
 watch(
   mathinputFieldsData,
-  () => {
+  (newInputData) => {
+    console.log(newInputData);
     try {
       rkdpProvider.addEquations(
-        mathinputFieldsData.value.map((field) => {
+        newInputData.map((field) => {
           return field.value;
         }),
       );
@@ -72,26 +76,40 @@ watch(
 // #endregion
 
 // #region Initial Conditions
-const initialConditions = reactive<Record<string, number>>({});
+const initialConditions = reactive<Record<string, string>>({});
 
 const unsubscribeUpdateEq = rkdpProvider.on('equationsUpdated', () => {
   Object.keys(initialConditions).forEach((key) => delete initialConditions[key]);
   rkdpProvider.getVariableNames().forEach((varName) => {
-    initialConditions[varName] = 0;
+    initialConditions[varName] = '';
   });
 });
 
 watch(initialConditions, (newConditions) => {
-  rkdpProvider.setInitialConditions(newConditions);
+  const newConditionsObj: Record<string, number> = {};
+  Object.keys(newConditions).forEach((key) => {
+    newConditionsObj[key] = mathInst.evaluate(newConditions[key]);
+  });
+  rkdpProvider.setInitialConditions(newConditionsObj);
 });
 // #endregion
 
 // #region Range
-const range = ref<Range>({ start: 0, end: 1, initialStep: 0.1 });
+const range = ref({ start: '0', end: '1', initialStep: '0.1', varName: 'x' });
 watch(
   range,
   (newVal) => {
-    rkdpProvider.setRange(newVal.start, newVal.end, newVal.initialStep);
+    chartOptions.value.scales!.x!.title!.text = newVal.varName.toUpperCase() + ' value';
+    try {
+      rkdpProvider.setRange(
+        newVal.varName,
+        mathInst.evaluate(newVal.start),
+        mathInst.evaluate(newVal.end),
+        mathInst.evaluate(newVal.initialStep),
+      );
+    } catch (e) {
+      console.error(e);
+    }
   },
   { deep: true },
 );
@@ -172,7 +190,7 @@ const chartOptions = ref<ChartOptionsProp>({
     y: {
       title: {
         display: true,
-        text: 'Y value',
+        text: 'Function value',
       },
       ticks: {
         color: bodyStyles.getPropertyValue('--p-surface-500'),
@@ -250,8 +268,8 @@ onUnmounted(() => {
           <div class="flex flex-col">
             <div v-for="(value, key) in initialConditions" :key="key" class="flex gap-2 items-center mb-1">
               <label :for="'for-' + key" class="whitespace-nowrap">{{ key }}(x) =</label>
-              <InputNumber v-model="initialConditions[key]" :input-id="'for-' + key" :maxFractionDigits="6"
-                class="w-full"></InputNumber>
+              <InputText v-model="initialConditions[key]" :input-id="'for-' + key" :maxFractionDigits="6"
+                class="w-full"></InputText>
             </div>
           </div>
         </template>
@@ -261,19 +279,26 @@ onUnmounted(() => {
         <template #title>Диапазон расчета</template>
         <template #content>
           <div class="flex flex-col gap-8 mt-8">
-            <FloatLabel>
-              <InputNumber v-model="range.start" input-id="fromX" :maxFractionDigits="3" class="w-full"></InputNumber>
-              <label for="fromX">Рассчитать от</label>
-            </FloatLabel>
-            <FloatLabel>
-              <InputNumber v-model="range.end" input-id="toX" :maxFractionDigits="3" class="w-full"></InputNumber>
-              <label for="toX">Рассчитать до</label>
-            </FloatLabel>
-            <FloatLabel>
-              <InputNumber v-model="range.initialStep" input-id="step" :minFractionDigits="1" :maxFractionDigits="6"
-                class="w-full"></InputNumber>
-              <label for="step">Шаг</label>
-            </FloatLabel>
+            <div class="flex gap-4">
+              <FloatLabel>
+                <InputText v-model="range.varName" id="varX" class="w-full"></InputText>
+                <label for="varX">Рассчитать по (переменной)</label>
+              </FloatLabel>
+              <FloatLabel>
+                <InputText v-model="range.initialStep" id="step" class="w-full"></InputText>
+                <label for="step">Шаг</label>
+              </FloatLabel>
+            </div>
+            <div class="flex gap-4">
+              <FloatLabel>
+                <InputText v-model="range.start" id="fromX" class="w-full"></InputText>
+                <label for="fromX">Рассчитать от</label>
+              </FloatLabel>
+              <FloatLabel>
+                <InputText v-model="range.end" id="toX" class="w-full"></InputText>
+                <label for="toX">Рассчитать до</label>
+              </FloatLabel>
+            </div>
             <div class="flex items-center justify-between">
               <label for="adaptiveSwitch">Адаптивный шаг</label>
               <ToggleSwitch v-model="isAdaptiveStep"></ToggleSwitch>

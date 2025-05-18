@@ -33,6 +33,7 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
   private _functions: ((scope: any) => number)[] = [];
   private _variables: string[] = [];
   private _initialConditions: Record<string, number> = {};
+  private _variableRangeName: string = 'x';
   private _range: Range = { start: 0, end: 1, initialStep: 0.1 };
   private _absoluteTolerance: number = 1e-6;
   private _relativeTolerance: number = 1e-3;
@@ -65,8 +66,10 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
     return this._variables.slice();
   }
 
-  setRange(start: number, end: number, initialStep: number) {
+  setRange(variableName: string, start: number, end: number, initialStep: number) {
     if (end <= start) throw new Error('End must be > start');
+
+    this._variableRangeName = variableName;
     this._range = { start, end, initialStep };
     this.emit('rangeChanged', this._range);
   }
@@ -200,7 +203,7 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
     for (const eq of this._rawEquations) {
       const [lhs, rhs] = eq.split('=');
       if (!rhs) throw new Error(`Invalid equation '${eq}'`);
-      const m = lhs.trim().match(/^([a-zA-Z])('+)$/);
+      const m = lhs.trim().match(/^([a-zA-Z])\^(′+)$/);
       if (!m) throw new Error(`Bad var in '${lhs}'`);
       const base = m[1],
         ord = m[2].length;
