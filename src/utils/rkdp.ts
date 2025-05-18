@@ -110,7 +110,7 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
     const maxH = (end - start) * 0.05;
 
     while (x < end) {
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
       if (this._cancelRequested) break;
       if (x + h > end) h = end - x;
 
@@ -180,8 +180,6 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
     const k: number[][] = Array(7)
       .fill(0)
       .map(() => Array(y.length).fill(0));
-    console.log('-----------------');
-    console.log(x, y);
     for (let i = 0; i < 7; i++) {
       const xi = x + c[i] * h;
       const yi = y.map(
@@ -189,9 +187,7 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
       );
       const scope: Record<string, number> = { [this._variableRangeName]: xi };
       this._variables.forEach((v, j) => (scope[v] = yi[j]));
-      console.log(Object.keys(scope).forEach((v) => console.log(v, scope[v])));
       k[i] = this._functions.map((fn) => fn.evaluate(scope));
-      console.log(k[i]);
     }
     const y5 = y.map((yi, j) => yi + h * b5.reduce((sum, bij, m) => sum + bij * k[m][j], 0));
     const y4 = y.map((yi, j) => yi + h * b4.reduce((sum, bij, m) => sum + bij * k[m][j], 0));
@@ -205,14 +201,12 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
       let [lhs, rhs] = eq.split('=');
       if (!rhs) throw new Error(`Invalid equation '${eq}'`);
       lhs = lhs.trim().replace(/\^′/g, '^(′)').replace(/\^″/g, '^(′′)');
-      console.log(rhs);
       rhs = rhs
         .replace(/\^′/g, '^(′)')
         .replace(/\^″/g, '^(′′)')
         .replace(/\^\((′+)\)/g, (match, quotes) => {
           return `_${quotes.length}`;
         });
-      console.log(rhs);
 
       const m = lhs.match(/^([a-zA-Z])\^\((′+)\)$/);
       if (!m) throw new Error(`Bad var in '${lhs}'`);

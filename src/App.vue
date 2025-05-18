@@ -60,7 +60,6 @@ function removeInput(index: number) {
 watch(
   mathinputFieldsData,
   (newInputData) => {
-    console.log(newInputData);
     try {
       rkdpProvider.addEquations(
         newInputData.map((field) => {
