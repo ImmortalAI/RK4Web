@@ -124,8 +124,9 @@ watch(
 const solveTaskResult = ref<SolutionPoint[]>([]);
 
 const isAdaptiveStep = ref(false);
-const startSolve = async () => {
-  await rkdpProvider.calculate(isAdaptiveStep.value);
+const calculationPromise = ref<Promise<SolutionPoint[]> | null>(null);
+const startSolve = () => {
+  calculationPromise.value = rkdpProvider.calculate(isAdaptiveStep.value);
 };
 
 const calculateButtonDisabled = ref(false);

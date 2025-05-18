@@ -110,6 +110,7 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
     const maxH = (end - start) * 0.05;
 
     while (x < end) {
+      await new Promise(resolve => setTimeout(resolve, 0));
       if (this._cancelRequested) break;
       if (x + h > end) h = end - x;
 
