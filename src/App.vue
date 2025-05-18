@@ -7,7 +7,7 @@ import { all, create } from 'mathjs';
 // #region Local Imports
 import { useTheme } from '@/composables/useTheme';
 import { DormandPrinceSolver } from '@/utils/rkdp';
-import type { Range, SolutionPoint } from '@/utils/rkdp';
+import type { SolutionPoint } from '@/utils/rkdp';
 import type { ChartDataProp, ChartOptionsProp } from '@/types/chart';
 import { downloadCSV } from '@/utils/downloaderCSV';
 // #endregion
@@ -78,9 +78,10 @@ watch(
 // #region Initial Conditions
 const initialConditions = reactive<Record<string, string>>({});
 
-const convertIC = (value: string) => value.replace(/_([0-9]+)$/, (match, num) => {
-  return "'".repeat(+num);
-});
+const convertIC = (value: string) =>
+  value.replace(/_([0-9]+)$/, (match, num) => {
+    return "'".repeat(+num);
+  });
 
 const unsubscribeUpdateEq = rkdpProvider.on('equationsUpdated', () => {
   Object.keys(initialConditions).forEach((key) => delete initialConditions[key]);
@@ -103,7 +104,7 @@ const range = ref({ start: '0', end: '1', initialStep: '0.1', varName: 'x' });
 watch(
   range,
   (newVal) => {
-    chartOptions.value.scales!.x!.title!.text = newVal.varName.toUpperCase() + ' value';
+    chartOptions.scales!.x!.title!.text = newVal.varName.toUpperCase() + ' value';
     try {
       rkdpProvider.setRange(
         newVal.varName,
@@ -143,13 +144,13 @@ const unsubscribeCalculateComplete = rkdpProvider.on(
 );
 
 watch(solveTaskResult, (newValue) => {
-  chartData.value.datasets = [];
+  chartData.datasets = [];
   Object.keys(newValue[0]).forEach((key) => {
-    if (key == 'x') return;
-    chartData.value.datasets.push({
+    if (key === range.value.varName) return;
+    chartData.datasets.push({
       label: 'График оси ' + key,
       data: newValue.map((point) => {
-        return { x: point.x, y: point[key] };
+        return { x: point[range.value.varName], y: point[key] };
       }),
       fill: false,
       tension: 0.1,
@@ -159,7 +160,7 @@ watch(solveTaskResult, (newValue) => {
 // #endregion
 
 // #region Chart Settings
-const chartData = ref<ChartDataProp>({
+const chartData = reactive<ChartDataProp>({
   datasets: [
     {
       label: 'Пример',
@@ -172,7 +173,7 @@ const chartData = ref<ChartDataProp>({
   ],
 });
 
-const chartOptions = ref<ChartOptionsProp>({
+const chartOptions = reactive<ChartOptionsProp>({
   responsive: true,
   maintainAspectRatio: false,
 
@@ -247,19 +248,34 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <header class="flex justify-between items-center p-2 pl-4 pr-4 m-2 border-2 rounded-3xl border-surface-600">
+  <header
+    class="flex justify-between items-center p-2 pl-4 pr-4 m-2 border-2 rounded-3xl border-surface-600"
+  >
     <p>Дорманд-Принс построитель</p>
-    <ToggleButton v-model="theme.isDark.value" off-label="Светлый" off-icon="pi pi-sun" on-label="Темный"
-      on-icon="pi pi-moon" />
+    <ToggleButton
+      v-model="theme.isDark.value"
+      off-label="Светлый"
+      off-icon="pi pi-sun"
+      on-label="Темный"
+      on-icon="pi pi-moon"
+    />
   </header>
   <main class="flex justify-center items-start flex-col md:flex-row gap-4 p-4">
     <div class="md:basis-1/3 flex flex-col">
       <Card>
         <template #title> Дифференциальные уравнения </template>
         <template #content>
-          <div class="flex items-center gap-2 border border-primary rounded-xl p-2 m-2"
-            v-for="(input, index) in mathinputFieldsData" :key="index">
-            <MathLiveInput class="w-full" v-model="input.value" :dark="theme.isDark.value" format="ascii" />
+          <div
+            class="flex items-center gap-2 border border-primary rounded-xl p-2 m-2"
+            v-for="(input, index) in mathinputFieldsData"
+            :key="index"
+          >
+            <MathLiveInput
+              class="w-full"
+              v-model="input.value"
+              :dark="theme.isDark.value"
+              format="ascii"
+            />
             <Button icon="pi pi-minus" severity="danger" @click="removeInput(index)" />
           </div>
           <Button icon="pi pi-plus" @click="addInput()" class="w-full!" />
@@ -270,10 +286,20 @@ onUnmounted(() => {
         <template #title>Начальные условия</template>
         <template #content>
           <div class="flex flex-col">
-            <div v-for="(value, key) in initialConditions" :key="key" class="flex gap-2 items-center mb-1">
-              <label :for="'for-' + key" class="whitespace-nowrap">{{ convertIC(key) }}(x) =</label>
-              <InputText v-model="initialConditions[key]" :input-id="'for-' + key" :maxFractionDigits="6"
-                class="w-full"></InputText>
+            <div
+              v-for="(value, key) in initialConditions"
+              :key="key"
+              class="flex gap-2 items-center mb-1"
+            >
+              <label :for="'for-' + key" class="whitespace-nowrap"
+                >{{ convertIC(key) }}({{ range.varName }}) =</label
+              >
+              <InputText
+                v-model="initialConditions[key]"
+                :input-id="'for-' + key"
+                :maxFractionDigits="6"
+                class="w-full"
+              ></InputText>
             </div>
           </div>
         </template>
@@ -316,10 +342,21 @@ onUnmounted(() => {
       <Button label="Загрузить результат" @click="saveDialogVisible = true" />
     </div>
     <div class="md:basis-2/3 border border-surface-400">
-      <Chart type="line" :data="chartData" :options="chartOptions" class="h-[80vh]" ref="chartRef"></Chart>
+      <Chart
+        type="line"
+        :data="chartData"
+        :options="chartOptions"
+        class="h-[80vh]"
+        ref="chartRef"
+      ></Chart>
     </div>
   </main>
-  <Dialog v-model:visible="saveDialogVisible" header="Выберите способ сохранения" position="bottomleft" modal>
+  <Dialog
+    v-model:visible="saveDialogVisible"
+    header="Выберите способ сохранения"
+    position="bottomleft"
+    modal
+  >
     <div class="flex flex-col gap-2 m-2">
       <Button label="Загрузить как CSV" @click="downloadCSV([...solveTaskResult])" />
       <Button label="Загрузить как изображение" @click="downloadChart"></Button>

@@ -22,15 +22,13 @@ export interface Range {
 }
 
 export interface SolutionPoint {
-  x: number;
   [varName: string]: number;
 }
 
 export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
   private _math: MathJsInstance;
   private _rawEquations: EquationInput[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private _functions: ((scope: any) => number)[] = [];
+  private _functions: EvalFunction[] = [];
   private _variables: string[] = [];
   private _initialConditions: Record<string, number> = {};
   private _variableRangeName: string = 'x';
@@ -97,11 +95,10 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
       return this._initialConditions[v];
     });
 
-    const initialPoint: SolutionPoint = { x };
+    const initialPoint: SolutionPoint = { [this._variableRangeName]: x };
     this._variables.forEach((v, i) => {
-      const splitted = v.split('_');
-      if (!(splitted[0] in initialPoint) && splitted[1] == '0') {
-        initialPoint[splitted[0]] = y[i];
+      if (!v.includes('_')) {
+        initialPoint[v] = y[i];
       }
     });
     const results: SolutionPoint[] = [initialPoint];
@@ -128,11 +125,10 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
         if (err <= 1) {
           x += h;
           y = y5;
-          const point: SolutionPoint = { x };
+          const point: SolutionPoint = { [this._variableRangeName]: x };
           this._variables.forEach((v, i) => {
-            const splitted = v.split('_');
-            if (!(splitted[0] in point) && splitted[1] === '0') {
-              point[splitted[0]] = y[i];
+            if (!v.includes('_')) {
+              point[v] = y[i];
             }
           });
 
@@ -146,11 +142,10 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
         const err = Math.max(...y5.map((yi5, i) => Math.abs(yi5 - y4[i])));
         x += h;
         y = y5;
-        const point: SolutionPoint = { x };
+        const point: SolutionPoint = { [this._variableRangeName]: x };
         this._variables.forEach((v, i) => {
-          const splitted = v.split('_');
-          if (!(splitted[0] in point) && splitted[1] === '0') {
-            point[splitted[0]] = y[i];
+          if (!v.includes('_')) {
+            point[v] = y[i];
           }
         });
 
@@ -184,14 +179,18 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
     const k: number[][] = Array(7)
       .fill(0)
       .map(() => Array(y.length).fill(0));
+    console.log('-----------------');
+    console.log(x, y);
     for (let i = 0; i < 7; i++) {
       const xi = x + c[i] * h;
       const yi = y.map(
         (yi, j) => yi + k.slice(0, i).reduce((sum, ks, m) => sum + ks[j] * (a[i][m] || 0), 0) * h,
       );
-      const scope: Record<string, number> = { x: xi };
+      const scope: Record<string, number> = { [this._variableRangeName]: xi };
       this._variables.forEach((v, j) => (scope[v] = yi[j]));
-      k[i] = this._functions.map((fn) => fn(scope));
+      console.log(Object.keys(scope).forEach((v) => console.log(v, scope[v])));
+      k[i] = this._functions.map((fn) => fn.evaluate(scope));
+      console.log(k[i]);
     }
     const y5 = y.map((yi, j) => yi + h * b5.reduce((sum, bij, m) => sum + bij * k[m][j], 0));
     const y4 = y.map((yi, j) => yi + h * b4.reduce((sum, bij, m) => sum + bij * k[m][j], 0));
@@ -199,14 +198,19 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
   }
 
   private parseEquations() {
+    this._variables = [];
+    this._functions = [];
     for (const eq of this._rawEquations) {
       let [lhs, rhs] = eq.split('=');
       if (!rhs) throw new Error(`Invalid equation '${eq}'`);
       lhs = lhs.trim().replace(/\^′/g, '^(′)').replace(/\^″/g, '^(′′)');
       console.log(rhs);
-      rhs = rhs.replace(/\^′/g, '^(′)').replace(/\^″/g, '^(′′)').replace(/\^\((′+)\)/g, (match, quotes) => {
-        return `_${quotes.length}`;
-      });
+      rhs = rhs
+        .replace(/\^′/g, '^(′)')
+        .replace(/\^″/g, '^(′′)')
+        .replace(/\^\((′+)\)/g, (match, quotes) => {
+          return `_${quotes.length}`;
+        });
       console.log(rhs);
 
       const m = lhs.match(/^([a-zA-Z])\^\((′+)\)$/);
@@ -219,13 +223,11 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
       for (let k = 0; k < ord - 1; k++) {
         const varName = k === 0 ? base : `${base}_${k}`;
         this._variables.push(varName);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this._functions.push((scope: any) => scope[`${base}_${k + 1}`]);
+        this._functions.push(this._math.parse(`${base}_${k + 1}`).compile());
       }
       const topVar = ord === 1 ? base : `${base}_${ord - 1}`;
       this._variables.push(topVar);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      this._functions.push((scope: any) => code.evaluate(scope));
+      this._functions.push(code);
     }
   }
 
