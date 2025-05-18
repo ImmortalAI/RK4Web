@@ -78,6 +78,10 @@ watch(
 // #region Initial Conditions
 const initialConditions = reactive<Record<string, string>>({});
 
+const convertIC = (value: string) => value.replace(/_([0-9]+)$/, (match, num) => {
+  return "'".repeat(+num);
+});
+
 const unsubscribeUpdateEq = rkdpProvider.on('equationsUpdated', () => {
   Object.keys(initialConditions).forEach((key) => delete initialConditions[key]);
   rkdpProvider.getVariableNames().forEach((varName) => {
@@ -267,7 +271,7 @@ onUnmounted(() => {
         <template #content>
           <div class="flex flex-col">
             <div v-for="(value, key) in initialConditions" :key="key" class="flex gap-2 items-center mb-1">
-              <label :for="'for-' + key" class="whitespace-nowrap">{{ key }}(x) =</label>
+              <label :for="'for-' + key" class="whitespace-nowrap">{{ convertIC(key) }}(x) =</label>
               <InputText v-model="initialConditions[key]" :input-id="'for-' + key" :maxFractionDigits="6"
                 class="w-full"></InputText>
             </div>

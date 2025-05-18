@@ -14,7 +14,6 @@ declare module 'vue' {
     Dialog: typeof import('primevue/dialog')['default']
     Divider: typeof import('primevue/divider')['default']
     FloatLabel: typeof import('primevue/floatlabel')['default']
-    InputNumber: typeof import('primevue/inputnumber')['default']
     InputText: typeof import('primevue/inputtext')['default']
     MathLiveInput: typeof import('./src/components/MathLiveInput.vue')['default']
     ToggleButton: typeof import('primevue/togglebutton')['default']

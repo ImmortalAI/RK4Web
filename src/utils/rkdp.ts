@@ -199,35 +199,33 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
   }
 
   private parseEquations() {
-    const map: Record<string, { order: number; func: EvalFunction }> = {};
     for (const eq of this._rawEquations) {
-      const [lhs, rhs] = eq.split('=');
+      let [lhs, rhs] = eq.split('=');
       if (!rhs) throw new Error(`Invalid equation '${eq}'`);
-      const m = lhs.trim().match(/^([a-zA-Z])\^(′+)$/);
+      lhs = lhs.trim().replace(/\^′/g, '^(′)').replace(/\^″/g, '^(′′)');
+      console.log(rhs);
+      rhs = rhs.replace(/\^′/g, '^(′)').replace(/\^″/g, '^(′′)').replace(/\^\((′+)\)/g, (match, quotes) => {
+        return `_${quotes.length}`;
+      });
+      console.log(rhs);
+
+      const m = lhs.match(/^([a-zA-Z])\^\((′+)\)$/);
       if (!m) throw new Error(`Bad var in '${lhs}'`);
       const base = m[1],
         ord = m[2].length;
       const node = this._math.parse(rhs);
       const code = node.compile();
-      map[base] = { order: ord, func: code };
-    }
 
-    this._variables = [];
-    this._functions = [];
-    for (const base of Object.keys(map).sort()) {
-      const { order } = map[base];
-      for (let k = 0; k < order - 1; k++) {
-        const varName = `${base}_${k}`;
+      for (let k = 0; k < ord - 1; k++) {
+        const varName = k === 0 ? base : `${base}_${k}`;
         this._variables.push(varName);
-        if (k < order) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          this._functions.push((scope: any) => scope[`${base}_${k + 1}`]);
-        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this._functions.push((scope: any) => scope[`${base}_${k + 1}`]);
       }
-      const topVar = `${base}_${order - 1}`;
+      const topVar = ord === 1 ? base : `${base}_${ord - 1}`;
       this._variables.push(topVar);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      this._functions.push((scope: any) => map[base].func.evaluate(scope));
+      this._functions.push((scope: any) => code.evaluate(scope));
     }
   }
 
