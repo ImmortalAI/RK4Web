@@ -24,8 +24,7 @@ const rkdpProvider = reactive<DormandPrinceSolver>(new DormandPrinceSolver());
 // #region Initial State
 const mathInst = create(all);
 
-onMounted(() => {
-});
+onMounted(() => {});
 // #endregion
 
 // #region ODE Input
@@ -55,7 +54,7 @@ watch(
         }),
       );
     } catch (e) {
-      console.error(e);
+      console.log(e);
     }
   },
   { deep: true },
@@ -116,18 +115,35 @@ const startSolve = () => {
   calculationPromise.value = rkdpProvider.calculate(isAdaptiveStep.value);
 };
 
-const calculateButtonDisabled = ref(false);
+const calculationInProgress = ref(false);
 const unsubCalculateStart = rkdpProvider.on('calculationStarted', () => {
-  calculateButtonDisabled.value = true;
+  calculationInProgress.value = true;
+  calculationProgressInPercent.value = 0;
 });
 
-const unsubCalculateProgress = rkdpProvider.on('calculationProgress', (o) => console.log(o));
+const calculationProgressInPercent = ref(0);
+const unsubCalculateProgress = rkdpProvider.on('calculationProgress', (o) => {
+  const newValue = Math.trunc(
+    ((o.x - +range.value.start) / (+range.value.end - +range.value.start)) * 100,
+  );
+  if (calculationProgressInPercent.value + 10 < newValue) {
+    calculationProgressInPercent.value = newValue;
+  }
+});
+
+const stopSolve = () => {
+  rkdpProvider.cancel();
+};
+
+const unsubscribeCalculateCancel = rkdpProvider.on('calculationCanceled', () => {
+  calculationInProgress.value = false;
+});
 
 const unsubscribeCalculateComplete = rkdpProvider.on(
   'calculationCompleted',
   (result: SolutionPoint[]) => {
     solveTaskResult.value = result;
-    calculateButtonDisabled.value = false;
+    calculationInProgress.value = false;
   },
 );
 
@@ -230,6 +246,7 @@ onUnmounted(() => {
   unsubscribeUpdateEq();
   unsubCalculateStart();
   unsubCalculateProgress();
+  unsubscribeCalculateCancel();
   unsubscribeCalculateComplete();
 });
 // #endregion
@@ -249,7 +266,7 @@ onUnmounted(() => {
     />
   </header>
   <main class="flex justify-center items-start flex-col md:flex-row gap-4 p-4">
-    <div class="md:basis-1/3 flex flex-col">
+    <div v-show="!calculationInProgress" class="md:basis-1/3 flex flex-col">
       <Card>
         <template #title> Дифференциальные уравнения </template>
         <template #content>
@@ -325,9 +342,20 @@ onUnmounted(() => {
         </template>
       </Card>
       <div class="p-2"></div>
-      <Button label="Рассчитать" @click="startSolve" :disabled="calculateButtonDisabled" />
+      <Button label="Рассчитать" @click="startSolve" />
       <Divider></Divider>
       <Button label="Загрузить результат" @click="saveDialogVisible = true" />
+    </div>
+    <div v-show="calculationInProgress" class="md:basis-1/3">
+      <Card>
+        <template #title>Расчет...</template>
+        <template #content>
+          <div class="flex flex-col gap-4">
+            <ProgressBar :value="calculationProgressInPercent"></ProgressBar>
+            <Button label="Отменить расчет" @click="stopSolve"></Button>
+          </div>
+        </template>
+      </Card>
     </div>
     <div class="md:basis-2/3 border border-surface-400">
       <Chart

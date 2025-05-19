@@ -16,6 +16,7 @@ declare module 'vue' {
     FloatLabel: typeof import('primevue/floatlabel')['default']
     InputText: typeof import('primevue/inputtext')['default']
     MathLiveInput: typeof import('./src/components/MathLiveInput.vue')['default']
+    ProgressBar: typeof import('primevue/progressbar')['default']
     ToggleButton: typeof import('primevue/togglebutton')['default']
     ToggleSwitch: typeof import('primevue/toggleswitch')['default']
   }

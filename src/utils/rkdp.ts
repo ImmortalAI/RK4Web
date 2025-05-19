@@ -157,7 +157,7 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
           results.push(point);
           this.emit('calculationProgress', { x, step: h, error: err });
         } else {
-          console.warn("Error is too big: ", err);
+          console.warn('Error is too big: ', err);
         }
 
         const rawFactor = err === 0 ? this._maxFactor : this._safetyFactor * (1 / err) ** 0.2;
