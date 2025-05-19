@@ -25,18 +25,6 @@ const rkdpProvider = reactive<DormandPrinceSolver>(new DormandPrinceSolver());
 const mathInst = create(all);
 
 onMounted(() => {
-  addInput();
-
-  solveTaskResult.value = [
-    { x: 0, y: 0 },
-    { x: 0.1, y: 0.026 },
-    { x: 0.272, y: 0.204 },
-    { x: 0.442, y: 0.57 },
-    { x: 0.606, y: 1.137 },
-    { x: 0.769, y: 1.944 },
-    { x: 0.945, y: 3.135 },
-    { x: 1, y: 3.591 },
-  ];
 });
 // #endregion
 
