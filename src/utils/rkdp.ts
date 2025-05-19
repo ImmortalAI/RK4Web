@@ -33,15 +33,18 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
   private _initialConditions: Record<string, number> = {};
   private _variableRangeName: string = 'x';
   private _range: Range = { start: 0, end: 1, initialStep: 0.1 };
-  private _absoluteTolerance: number = 1e-6;
-  private _relativeTolerance: number = 1e-3;
+  private _absoluteTolerance: number = 1e-10;
+  private _relativeTolerance: number = 1e-6;
+  private _minFactor: number = 0.1;
+  private _maxFactor: number = 5;
+  private _safetyFactor: number = 0.9;
+  private _minStep: number | null = null;
+  private _maxStep: number | null = null;
   private _cancelRequested = false;
 
-  constructor(atol: number = 1e-6, rtol: number = 1e-3) {
+  constructor() {
     super();
     this._math = create(all);
-    this._absoluteTolerance = atol;
-    this._relativeTolerance = rtol;
   }
 
   addEquations(eqs: EquationInput[]) {
@@ -78,6 +81,20 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
     this.emit('toleranceChanged', { atol, rtol });
   }
 
+  setStepLimits(min: number | null, max: number | null) {
+    this._minStep = min;
+    this._maxStep = max;
+  }
+
+  setFactors(min: number, max: number) {
+    this._minFactor = min;
+    this._maxFactor = max;
+  }
+
+  setSafety(safetyFactor: number) {
+    this._safetyFactor = safetyFactor;
+  }
+
   cancel() {
     this._cancelRequested = true;
     this.emit('calculationCanceled', undefined);
@@ -105,9 +122,8 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
     this.emit('calculationStarted', this._range);
 
     let h = initialStep;
-    const safety = 0.8;
-    const minH = 1e-10;
-    const maxH = (end - start) * 0.05;
+    const minH = this._minStep ?? 1e-10;
+    const maxH = this._maxStep ?? (end - start) * 0.1;
 
     while (x < end) {
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -118,10 +134,15 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
 
       if (useAdaptive) {
         const tol = y5.map(
-          (yi5, i) => this._absoluteTolerance + this._relativeTolerance * Math.max(y[i], yi5),
+          (yi5, i) =>
+            this._absoluteTolerance +
+            this._relativeTolerance * Math.max(Math.abs(y[i]), Math.abs(yi5)),
         );
         const err_all = y5.map((yi5, i) => Math.abs(yi5 - y4[i]));
-        const err = Math.max(...err_all.map((err_i, i) => err_i / tol[i]));
+        // Use L2 norm (Euclidean distance)
+        const err = Math.sqrt(
+          err_all.reduce((sum, err_i, i) => sum + (err_i / tol[i]) ** 2, 0) / y.length,
+        );
 
         if (err <= 1) {
           x += h;
@@ -135,9 +156,14 @@ export class DormandPrinceSolver extends TypedEventEmitter<EventMap> {
 
           results.push(point);
           this.emit('calculationProgress', { x, step: h, error: err });
+        } else {
+          console.warn("Error is too big: ", err);
         }
 
-        h = h * safety * Math.pow(1 / err, 1 / 5);
+        const rawFactor = err === 0 ? this._maxFactor : this._safetyFactor * (1 / err) ** 0.2;
+        const factor = Math.min(this._maxFactor, Math.max(this._minFactor, rawFactor));
+
+        h = h * factor;
         h = Math.max(minH, Math.min(h, maxH));
       } else {
         const err = Math.max(...y5.map((yi5, i) => Math.abs(yi5 - y4[i])));
